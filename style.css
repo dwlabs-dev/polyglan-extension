@@ -1,0 +1,81 @@
+/* style.css for Polyglan AI Extension */
+
+#polyglan-side-panel {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    height: calc(100vh - 120px);
+    background-color: white;
+    z-index: 99999; /* Super alto para ficar acima do Meet */
+    border-radius: 12px;
+    box-shadow: -5px 0 25px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.polyglan-header {
+    background-color: #00796b;
+    color: white;
+    padding: 15px;
+    text-align: center;
+}
+
+.polyglan-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+}
+
+.polyglan-content {
+    padding: 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.polyglan-content p {
+    color: #555;
+    margin-bottom: 25px;
+}
+
+.polyglan-button {
+    background-color: #00796b;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.polyglan-button:hover {
+    background-color: #004d40;
+}
+
+.polyglan-footer {
+    padding: 10px;
+    background-color: #f5f5f5;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #999;
+    border-top: 1px solid #eee;
+}
+
+/* Ajuste para não cobrir controles vitais se possível */
+@media (max-width: 800px) {
+    #polyglan-side-panel {
+        width: 250px;
+        right: 10px;
+    }
+}
