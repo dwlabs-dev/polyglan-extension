@@ -1,0 +1,20 @@
+{
+  "name": "Polyglan AI",
+  "description": "IA para análise de reuniões e prática de idiomas",
+  "developer": {
+    "name": "Polyglan Team",
+    "url": "https://polyglan.com"
+  },
+  "addOns": {
+    "common": {
+      "name": "Polyglan AI",
+      "logoUrl": "https://polyglan.com/logo.png",
+      "useLocaleFromApp": true
+    },
+    "meet": {
+      "sidePanel": {
+        "url": "https://localhost:5173"
+      }
+    }
+  }
+}

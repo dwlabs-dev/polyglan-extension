@@ -5,7 +5,8 @@ Aplicativo de integração com videoconferências (Google Meet) para o ecossiste
 ## Responsabilidades
 - Conectar-se às reuniões online (Google Meet).
 - Acessar informações da reunião, como participantes e duração.
-- Capturar transcrições ou gravar arquivos de áudio para a IA.
+- Construir a interface do **Professor**: Para seleção do tipo de aula (Debate, História, etc).
+- Construir a interface do **Aluno**: Focada na gravação individual e ininterrupta do áudio para análise da Inteligência Artificial.
 - Interagir sutilmente com a UI durante a chamada (se viável na abordagem).
 
 ## Stack Tecnológico 
