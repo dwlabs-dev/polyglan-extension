@@ -34,3 +34,5 @@ next-env.d.ts
 .DS_Store
 Thumbs.db
 package-lock.json
+
+examples/credentials.json
