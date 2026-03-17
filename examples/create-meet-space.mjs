@@ -48,7 +48,7 @@ async function createSpace() {
     // console.log('Resultado do teste direto:', data);
 
     console.log(`\n✅ Sucesso!`);
-    console.log(`Link do Meet: ${data?.meetingUri}`);
+    // console.log(`Link do Meet: ${data?.meetingUri}`);
     console.log(`Link do Meet: ${response?.data?.meetingUri}`);
 
   } catch (error) {
