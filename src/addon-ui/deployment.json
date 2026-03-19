@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "addOns": {
+      "common": {
+        "name": "Polyglan",
+        "logoUrl": "https://postvertebral-nonthematically-zayn.ngrok-free.dev/logo.png",
+        "primaryColor": "#3b234a"
+      },
+      "meet": {
+        "sidePanelUri": "https://postvertebral-nonthematically-zayn.ngrok-free.dev",
+        "supportsCoActivity": true
+      }
+    },
+    "oauthScopes": []
+  }
+}

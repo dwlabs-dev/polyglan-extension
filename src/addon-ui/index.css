@@ -1,17 +1,17 @@
 :root {
-  --primary: #3b234a;
+  --primary-purple: #3b234a;
+  --secondary-purple: #523961;
   --lavender: #baafc4;
-  --glass-bg: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.2);
-  --text-light: #ffffff;
-  --text-dark: #3b234a;
+  --glass-bg: rgba(59, 35, 74, 0.7);
+  --glass-border: rgba(186, 175, 196, 0.2);
 }
 
 body {
   margin: 0;
+  padding: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: var(--primary);
-  color: var(--text-light);
+  background-color: var(--primary-purple);
+  color: white;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -19,13 +19,15 @@ body {
   overflow: hidden;
 }
 
-.app-container.side-panel {
-  width: 100%;
+.app-container {
+  width: 100vw;
+  max-width: 300px; /* Side panel standard width */
   height: 100vh;
+  margin: 0 auto;
   padding: 16px;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #3b234a 0%, #523961 100%);
+  background: linear-gradient(135deg, var(--primary-purple) 0%, var(--secondary-purple) 100%);
   overflow-y: auto;
 }
 
@@ -96,6 +98,33 @@ main {
 
 .debate-button:hover {
   background-color: #c3bbc9;
+}
+
+.meeting-info {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed var(--glass-border);
+  border-radius: 8px;
+  padding: 12px;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.meeting-info p {
+  margin: 0 0 8px 0;
+  font-size: 0.85rem;
+  color: var(--lavender);
+}
+
+.meeting-link {
+  color: #fff;
+  text-decoration: underline;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.meeting-link:hover {
+  color: var(--lavender);
 }
 
 footer {

@@ -9,12 +9,15 @@
     "dev:api": "npx tsx src/addon-api/server.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "tunnel": "node scripts/tunnel.js",
+    "dev:meet": "concurrently \"npm run dev\" \"npm run tunnel\""
   },
   "dependencies": {
     "@google-apps/meet": "^0.7.1",
     "@google-cloud/local-auth": "^3.0.1",
     "@googleworkspace/meet-addons": "^1.2.0",
+    "dotenv": "^17.3.1",
     "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0",
     "react": "^19.2.4",
@@ -22,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@ngrok/ngrok": "^1.7.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^24.12.0",

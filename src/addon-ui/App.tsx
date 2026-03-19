@@ -2,58 +2,54 @@ import { useState, useEffect } from 'react';
 import { meet } from '@googleworkspace/meet-addons';
 import './index.css';
 
-/**
- * Polyglan Meet Add-on UI
- * Optimized for Google Meet Side Panel
- */
+interface MeetingData {
+  meetingUri: string;
+  meetingCode: string;
+  name: string;
+}
+
+interface CoActivityState {
+  debateStarted: boolean;
+  meetingId: string | null;
+}
+
 function App() {
   const [status, setStatus] = useState('');
-  const [meetingId, setMeetingId] = useState<string | null>(null);
+  const [meetingData, setMeetingData] = useState<MeetingData | null>(null);
+  const [isDebateActive, setIsDebateActive] = useState(false);
 
   useEffect(() => {
-    const initSdk = async () => {
+    // A inicialização principal agora ocorre no main.tsx para handshake imediato.
+    // Aqui podemos apenas escutar o estado da co-activity se necessário.
+    const startCoActivityListener = async () => {
       try {
-        console.log('[Add-on] Initializing Meet SDK...');
-        await meet.addon.createAddonSession({
-          cloudProjectNumber: '792576089745', // Placeholder: Substitua pelo seu número do projeto no Google Cloud
+        const session = await (meet.addon as any).createAddonSession({
+          cloudProjectNumber: '792576089745', 
         });
-        // Simulando a extração para evitar erro de lint.
-        setMeetingId('meet-id-' + Date.now());
-      } catch (error) {
-        console.error('[Add-on] SDK Initialization failed:', error);
-        setStatus('Erro ao carregar SDK do Meet.');
+        
+        await session.createCoActivityClient({
+          onCoActivityStateChanged: (state: CoActivityState) => {
+            console.log('[Add-on] Co-activity state changed:', state);
+            if (state.debateStarted) {
+              setIsDebateActive(true);
+              setStatus(`Modo Debate ATIVO`);
+            } else {
+              setIsDebateActive(false);
+              setStatus('Pronto para iniciar');
+            }
+          },
+        });
+      } catch (e) {
+        console.warn('[Add-on] Co-activity não disponível (fora do Meet?)');
       }
     };
-    initSdk();
+
+    startCoActivityListener();
   }, []);
-
-  const handleStartDebate = async () => {
-    setStatus('Iniciando...');
-
-    try {
-      const response = await fetch('http://localhost:3001/api/session/start-debate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ meetingId: meetingId || 'meet-id-placeholder' }),
-      });
-
-      const data = await response.json();
-
-      if (data.status === 'debate_started') {
-        setStatus('Debate iniciado com sucesso!');
-      } else {
-        setStatus('Erro ao iniciar debate.');
-      }
-    } catch (error) {
-      console.error('Fetch error:', error);
-      setStatus('Erro de conexão com o servidor.');
-    }
-  };
 
   const handleCreateRoom = async () => {
     setStatus('Criando sala...');
+    setMeetingData(null);
 
     try {
       const response = await fetch('http://localhost:3001/api/meet/create-space', {
@@ -61,19 +57,61 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ meetingId: meetingId || 'meet-id-placeholder' }),
+        body: JSON.stringify({}),
       });
 
       const data = await response.json();
 
-      if (data.status === 'debate_started') {
-        setStatus('Debate iniciado com sucesso!');
+      if (data.status === 'success') {
+        const newMeeting = {
+          meetingUri: data.meetingUri,
+          meetingCode: data.meetingCode,
+          name: data.meetingName
+        };
+        setMeetingData(newMeeting);
+        setStatus('Sala criada com sucesso!');
       } else {
-        setStatus('Erro ao iniciar debate.');
+        setStatus('Erro ao criar sala: ' + (data.error || 'Erro desconhecido'));
       }
     } catch (error) {
       console.error('Fetch error:', error);
       setStatus('Erro de conexão com o servidor.');
+    }
+  };
+
+  const handleStartDebate = async () => {
+    if (!meetingData) {
+      setStatus('Crie uma sala primeiro.');
+      return;
+    }
+
+    setStatus('Iniciando sincronização...');
+
+    try {
+      // 1. Notificar o backend (opcional, para logs/persistência)
+      await fetch('http://localhost:3001/api/session/start-debate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ meetingId: meetingData.meetingCode }),
+      });
+
+      // 2. Sincronizar via SDK para todos os participantes
+      // Assume que meet.addon já foi inicializado em main.tsx
+      const client = await (meet.addon as any).createCoActivityClient({});
+      
+      await client.setCoActivityState({
+        debateStarted: true,
+        meetingId: meetingData.meetingCode
+      });
+
+      setStatus('Sincronização enviada para todos!');
+      setIsDebateActive(true);
+
+    } catch (error) {
+      console.error('Co-activity error:', error);
+      setStatus('Erro ao sincronizar debate.');
     }
   };
 
@@ -87,27 +125,40 @@ function App() {
 
         <main>
           <p className="description">
-            Pratique seu inglês em tempo real durante a reunião.
+            {isDebateActive 
+              ? 'O modo debate está ativo para todos os participantes.' 
+              : 'Inicie uma atividade sincronizada para todos na reunião.'}
           </p>
-          <button
-            className="create-room-button"
-            onClick={handleCreateRoom}
-          >
-            Criar Sala
-          </button>
+          
+          {!isDebateActive && (
+            <button
+              className="create-room-button"
+              onClick={handleCreateRoom}
+              disabled={status === 'Criando sala...'}
+            >
+              {meetingData ? 'Sala Gerada' : 'Gerar Sala de Debate'}
+            </button>
+          )}
+
+          {meetingData && !isDebateActive && (
+            <div className="meeting-info">
+              <p>ID: <strong>{meetingData.meetingCode}</strong></p>
+            </div>
+          )}
 
           <button
-            className="debate-button"
+            className={`debate-button ${isDebateActive ? 'active' : ''}`}
             onClick={handleStartDebate}
+            disabled={!meetingData || isDebateActive}
           >
-            Iniciar Modo Debate
+            {isDebateActive ? 'Debate em Curso...' : 'Sincronizar Debate (All)'}
           </button>
 
           {status && <div className="status-message">{status}</div>}
         </main>
 
         <footer>
-          <span>v1.0.0</span>
+          <span>v1.0.0 (Meet SDK)</span>
         </footer>
       </div>
     </div>

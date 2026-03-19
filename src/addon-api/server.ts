@@ -46,6 +46,8 @@ app.post('/api/meet/create-space', async (_req: Request, res: Response) => {
 
     res.json({
       status: 'success',
+      meetingName: response.data.name,
+      meetingCode: response.data.meetingCode,
       meetingUri: response.data.meetingUri,
       space: response.data
     });
@@ -68,7 +70,7 @@ app.post('/api/session/start-debate', (req: Request, res: Response) => {
   }
 
   res.json({
-    status: "debate_started",
+    status: "success",
     timestamp: Date.now(),
     meetingId: meetingId
   });
