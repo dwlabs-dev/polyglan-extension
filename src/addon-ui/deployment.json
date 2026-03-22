@@ -1,16 +1,23 @@
 {
-  "manifest": {
-    "addOns": {
-      "common": {
-        "name": "Polyglan",
-        "logoUrl": "https://postvertebral-nonthematically-zayn.ngrok-free.dev/logo.png",
-        "primaryColor": "#3b234a"
-      },
-      "meet": {
-        "sidePanelUri": "https://postvertebral-nonthematically-zayn.ngrok-free.dev",
-        "supportsCoActivity": true
+  "addOns": {
+    "common": {
+      "name": "Polyglan (3)",
+      "logoUrl": "https://prisoner-contest-slides-carroll.trycloudflare.com/logo.png",
+      "layoutProperties": {
+        "primaryColor": "#EAB308",
+        "secondaryColor": "#000000"
       }
     },
-    "oauthScopes": []
+    "meet": {
+      "web": {
+        "sidePanelUri": "https://prisoner-contest-slides-carroll.trycloudflare.com/index.html",
+        "addOnOrigins": [
+          "https://prisoner-contest-slides-carroll.trycloudflare.com"
+        ]
+      }
+    },
+    "httpOptions": {
+      "granularOauthPermissionSupport": "OPT_IN"
+    }
   }
 }

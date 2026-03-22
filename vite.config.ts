@@ -1,20 +1,27 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'log-requests',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          console.log(`[REQUEST] ${req.method} ${req.url}`);
+          next();
+        });
+      }
+    }
+  ],
   server: {
     host: true,
-    allowedHosts: [
-      'postvertebral-nonthematically-zayn.ngrok-free.dev'
-    ],
+    allowedHosts: true,
+    strictPort: true,
     headers: {
-      'Content-Security-Policy': "frame-ancestors https://meet.google.com",
+      'Content-Security-Policy': "frame-ancestors 'self' https://meet.google.com https://*.google.com",
+      'X-Frame-Options': 'ALLOWALL',
     },
-    hmr: {
-      protocol: 'wss',
-      clientPort: 443
-    }
+    hmr: false
   }
 })
