@@ -1,7 +1,8 @@
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
-import './index.css';
+import App from './app';
+import '../assets/index.css';
+import '../features/addon/assets/addon.css';
 
 async function initialize() {
   const params = new URLSearchParams(window.location.search);
@@ -12,7 +13,7 @@ async function initialize() {
     try {
       const { meet } = await import('@googleworkspace/meet-addons');
       await meet.addon.createAddonSession({
-        cloudProjectNumber: import.meta.env.VITE_GOOGLE_CLOUD_PROJECT_NUMBER
+        cloudProjectNumber: import.meta.env.VITE_GOOGLE_CLOUD_PROJECT_NUMBER || '1082613234514'
       });
       console.log('[Polyglan] ✅ Handshake completed!');
     } catch (e) {

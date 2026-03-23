@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:ui\" \"npm run dev:api\"",
     "dev:ui": "vite",
-    "dev:api": "npx tsx src/addon-api/server.ts",
+    "dev:api": "npx tsx src/features/addon/api-server.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

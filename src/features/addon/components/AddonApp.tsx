@@ -1,4 +1,4 @@
-import './index.css';
+import '../assets/addon.css';
 import { useState, useEffect } from 'react';
 import { meet } from '@googleworkspace/meet-addons';
 
