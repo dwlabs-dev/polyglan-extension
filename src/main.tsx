@@ -1,23 +1,37 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import SidePanelUri from './SidePanelUri.tsx'
+import { StrictMode } from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
 
-const root = createRoot(document.getElementById('root')!);
+async function initialize() {
+  const params = new URLSearchParams(window.location.search);
+  const meetSdk = params.get('meet_sdk');
 
-const renderApp = () => {
-  const path = window.location.pathname;
-  
-  if (path === '/sidepaineluri') {
-    return <SidePanelUri />;
+  if (meetSdk) {
+    console.log('[Polyglan] meet_sdk parameter detected, starting handshake...');
+    try {
+      const { meet } = await import('@googleworkspace/meet-addons');
+      await meet.addon.createAddonSession({
+        cloudProjectNumber: import.meta.env.VITE_GOOGLE_CLOUD_PROJECT_NUMBER
+      });
+      console.log('[Polyglan] ✅ Handshake completed!');
+    } catch (e) {
+      console.error('[Polyglan] ❌ Handshake failed:', e);
+    }
+  } else {
+    console.log('[Polyglan] No meet_sdk — running outside Google Meet.');
   }
-  
-  return <App />;
-};
+}
 
-root.render(
-  <StrictMode>
-    {renderApp()}
-  </StrictMode>,
-)
+// Start initialization
+initialize();
+
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  );
+}

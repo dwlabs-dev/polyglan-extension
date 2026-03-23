@@ -15,12 +15,20 @@ export default defineConfig({
     }
   ],
   server: {
+    port: 5173,
     host: true,
     allowedHosts: true,
     strictPort: true,
     headers: {
       'Content-Security-Policy': "frame-ancestors 'self' https://meet.google.com https://*.google.com",
       'X-Frame-Options': 'ALLOWALL',
+    },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      }
     },
     hmr: false
   }

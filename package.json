@@ -9,9 +9,7 @@
     "dev:api": "npx tsx src/addon-api/server.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "tunnel": "node scripts/tunnel.js",
-    "dev:meet": "concurrently \"npm run dev\" \"npm run tunnel\""
+    "preview": "vite preview"
   },
   "dependencies": {
     "@google-apps/meet": "^0.7.1",

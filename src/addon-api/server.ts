@@ -7,7 +7,6 @@ import { authenticate } from '@google-cloud/local-auth';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Path for credentials (using the example path for now)
 const CREDENTIALS_PATH = path.join(process.cwd(), 'examples/credentials.json');
 const SCOPES = [
   'https://www.googleapis.com/auth/meetings.space.created',
@@ -27,6 +26,19 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.get('/health', async (_req: Request, res: Response) => {
+  try {
+    console.log('[API] Health check...');
+
+    res.json({
+      status: 'success',
+      message: `API is running at ${PORT}`
+    });
+  } catch (error: any) {
+    console.error('[API] Erro ao criar espaço:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 /**
  * Endpoint to create a new Meet Space
@@ -64,10 +76,6 @@ app.post('/api/session/start-debate', (req: Request, res: Response) => {
   const { meetingId } = req.body;
 
   console.log(`[API] Iniciar Modo Debate para meetingId: ${meetingId}`);
-
-  if (!meetingId) {
-    return res.status(400).json({ error: 'meetingId is required' });
-  }
 
   res.json({
     status: "success",
