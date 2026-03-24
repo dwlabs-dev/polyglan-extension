@@ -70,18 +70,57 @@ app.post('/api/meet/create-space', async (_req: Request, res: Response) => {
 });
 
 /**
- * Endpoint to start a debate session (mocked logic)
+ * Unified endpoint to start a session.
+ * Body: { type: "Debate" | "History", participants: string[] }
+ * Requires at least 2 participants.
  */
-app.post('/api/session/start-debate', (req: Request, res: Response) => {
-  const { meetingId } = req.body;
+app.post('/api/session/start', (req: Request, res: Response) => {
+  const { type, participants } = req.body;
 
-  console.log(`[API] Iniciar Modo Debate para meetingId: ${meetingId}`);
+  // Validate type
+  const validTypes = ['Debate', 'History'];
+  if (!type || !validTypes.includes(type)) {
+    res.status(400).json({
+      status: 'error',
+      message: `Invalid type. Must be one of: ${validTypes.join(', ')}`,
+    });
+    return;
+  }
+
+  // Validate participants
+  if (!Array.isArray(participants) || participants.length < 2) {
+    res.status(400).json({
+      status: 'error',
+      message: 'At least 2 participants are required.',
+    });
+    return;
+  }
+
+  console.log(`[API] Starting session — type: ${type}, participants: ${participants.join(', ')}`);
 
   res.json({
-    status: "success",
+    status: 'success',
+    type,
+    participants,
     timestamp: Date.now(),
-    meetingId: meetingId
   });
+});
+
+/**
+ * Endpoint to list available participants (mocked data)
+ */
+app.get('/api/participants', (_req: Request, res: Response) => {
+  const participants = [
+    { id: '1', name: 'Ana Silva', email: 'ana.silva@email.com', avatar: '👩‍🎓' },
+    { id: '2', name: 'Carlos Oliveira', email: 'carlos.oliveira@email.com', avatar: '👨‍🎓' },
+    { id: '3', name: 'Maria Santos', email: 'maria.santos@email.com', avatar: '👩‍💼' },
+    { id: '4', name: 'Pedro Costa', email: 'pedro.costa@email.com', avatar: '👨‍💼' },
+    { id: '5', name: 'Julia Pereira', email: 'julia.pereira@email.com', avatar: '👩‍🏫' },
+    { id: '6', name: 'Lucas Ferreira', email: 'lucas.ferreira@email.com', avatar: '👨‍🏫' },
+  ];
+
+  console.log('[API] Listando participantes...');
+  res.json({ status: 'success', participants });
 });
 
 app.listen(PORT, () => {

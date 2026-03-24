@@ -1,44 +1,14 @@
 {
-  "name": "temp-ext",
+  "name": "polyglan-extension",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "2.0.0",
   "scripts": {
-    "dev": "concurrently \"npm run dev:ui\" \"npm run dev:api\"",
-    "dev:ui": "vite",
-    "dev:api": "npx tsx src/features/addon/api-server.ts",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@google-apps/meet": "^0.7.1",
-    "@google-cloud/local-auth": "^3.0.1",
-    "@googleworkspace/meet-addons": "^1.2.0",
-    "dotenv": "^17.3.1",
-    "google-auth-library": "^10.6.2",
-    "googleapis": "^171.4.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "dev": "concurrently \"npm run dev:front\" \"npm run dev:api\"",
+    "dev:front": "cd front && npm run dev",
+    "dev:api": "cd api && npm run dev",
+    "install:all": "cd api && npm install && cd ../front && npm install"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@ngrok/ngrok": "^1.7.0",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/node": "^24.12.0",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.0",
-    "concurrently": "^9.2.1",
-    "cors": "^2.8.6",
-    "eslint": "^9.39.4",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "express": "^5.2.1",
-    "globals": "^17.4.0",
-    "typescript": "~5.9.3",
-    "typescript-eslint": "^8.56.1",
-    "vite": "^8.0.0"
+    "concurrently": "^9.2.1"
   }
 }

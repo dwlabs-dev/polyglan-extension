@@ -1,15 +1,7 @@
 {
   "files": [],
   "references": [
-    {
-      "path": "./tsconfig.app.json"
-    },
-    {
-      "path": "./tsconfig.node.json"
-    }
-  ],
-  "compilerOptions": {
-    "moduleResolution": "bundler",
-    "module": "preserve"
-  }
+    { "path": "./front/tsconfig.json" },
+    { "path": "./api/tsconfig.json" }
+  ]
 }
