@@ -11,10 +11,10 @@ const router = Router();
  */
 router.get('/api/participants', async (req: Request, res: Response) => {
   try {
-    const conferenceRecord = req.query.conferenceRecord as string | undefined;
-    console.log(`[API] Listing participants (conferenceRecord: ${conferenceRecord || 'none — using mock'})...`);
+    const meetingCode = req.query.meetingCode as string | undefined;
+    console.log(`[API] Listing participants (meetingCode: ${meetingCode || 'none — using mock'})...`);
 
-    const participants = await listParticipants(conferenceRecord);
+    const participants = await listParticipants(meetingCode);
 
     res.json({ status: 'success', participants });
   } catch (error: any) {

@@ -22,12 +22,12 @@ const MOCK_PARTICIPANTS: MeetParticipant[] = [
 
 /**
  * List participants from a Google Meet conference record.
- * Falls back to mock data if no conferenceRecord is provided or API fails.
+ * Falls back to mock data if no meetingCode is provided or API fails.
  *
- * @param conferenceRecord - The conference record name (e.g. "conferenceRecords/abc-mnop-xyz")
+ * @param meetingCode - The conference record name (e.g. "meetCode/abc-mnop-xyz")
  */
-export async function listParticipants(conferenceRecord?: string): Promise<MeetParticipant[]> {
-  if (!conferenceRecord) {
+export async function listParticipants(meetingCode?: string): Promise<MeetParticipant[]> {
+  if (!meetingCode) {
     console.log('[MeetService] No conferenceRecord provided, returning mock participants.');
     return MOCK_PARTICIPANTS;
   }
@@ -36,8 +36,10 @@ export async function listParticipants(conferenceRecord?: string): Promise<MeetP
     const authClient = await getAuthClient();
     const meetClient = google.meet({ version: 'v2', auth: authClient as any });
 
+    const conferenceRecord = await getCurrentConferenceRecord(meetingCode);
+
     const response = await (meetClient.conferenceRecords as any).participants.list({
-      parent: `conferenceRecords/${conferenceRecord}`,
+      parent: conferenceRecord.name,
       headers: {
         'Authorization': `Bearer ${authClient.credentials.access_token}`,
       },
@@ -76,4 +78,18 @@ export async function createMeetSpace() {
   });
 
   return response.data;
+}
+
+export async function getCurrentConferenceRecord(meetingCode: string) {
+  const authClient = await getAuthClient();
+  const meetClient = google.meet({ version: 'v2', auth: authClient as any });
+
+  const response = await (meetClient.conferenceRecords as any).list({
+    filter: `space.meeting_code="${meetingCode}" AND end_time IS NULL`,
+    headers: {
+      'Authorization': `Bearer ${authClient.credentials.access_token}`,
+    },
+  })
+
+  return response.data.conferenceRecords[0];
 }

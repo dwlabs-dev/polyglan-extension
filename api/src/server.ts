@@ -2,9 +2,10 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 
+import meetRouter from './routes/meet.js';
+import authRouter from './routes/auth.js';
 import healthRouter from './routes/health.js';
 import sessionRouter from './routes/session.js';
-import meetRouter from './routes/meet.js';
 import participantsRouter from './routes/participants.js';
 
 const app = express();
@@ -15,6 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.use(authRouter);
 app.use(healthRouter);
 app.use(sessionRouter);
 app.use(meetRouter);
