@@ -37,7 +37,10 @@ export async function listParticipants(conferenceRecord?: string): Promise<MeetP
     const meetClient = google.meet({ version: 'v2', auth: authClient as any });
 
     const response = await (meetClient.conferenceRecords as any).participants.list({
-      parent: conferenceRecord,
+      parent: `conferenceRecords/${conferenceRecord}`,
+      headers: {
+        'Authorization': `Bearer ${authClient.credentials.access_token}`,
+      },
     });
 
     const participants: MeetParticipant[] = (response.data.participants || []).map(
