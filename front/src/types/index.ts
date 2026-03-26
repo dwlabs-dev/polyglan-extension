@@ -1,10 +1,9 @@
 export type Mode = 'debate' | 'history';
 
 export interface Participant {
-  id: string;
   name: string;
-  email: string;
-  avatar: string;
+  googleUserId: string;
+  conferenceRecordUserId: string;
 }
 
 export interface SessionStartRequest {

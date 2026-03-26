@@ -60,11 +60,11 @@ function App() {
     setSelectedMode(null);
   };
 
-  const handleStartSession = async (mode: Mode, participantEmails: string[]) => {
+  const handleStartSession = async (mode: Mode, participantIds: string[]) => {
     setStatus('Iniciando sessão...');
 
     try {
-      const data = await startSession(mode, participantEmails);
+      const data = await startSession(mode, participantIds);
 
       if (data.status === 'error') {
         setStatus(data.message || 'Erro ao iniciar sessão.');
@@ -89,7 +89,7 @@ function App() {
 
       setIsSessionActive(true);
       setView('active');
-      setStatus(`${modeLabel} iniciado com ${participantEmails.length} participante(s)!`);
+      setStatus(`${modeLabel} iniciado com ${participantIds.length} participante(s)!`);
     } catch (error) {
       console.error('Session start error:', error);
       setStatus('Erro ao iniciar sessão.');

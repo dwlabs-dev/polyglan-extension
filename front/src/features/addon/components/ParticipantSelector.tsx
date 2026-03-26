@@ -4,7 +4,7 @@ import type { Mode, Participant } from '../../../types';
 
 interface ParticipantSelectorProps {
   mode: Mode;
-  onStart: (mode: Mode, participantEmails: string[]) => void;
+  onStart: (mode: Mode, participantIds: string[]) => void;
   onBack: () => void;
 }
 
@@ -34,13 +34,13 @@ export default function ParticipantSelector({ mode, onStart, onBack }: Participa
     fetchParticipants();
   }, []);
 
-  const toggleParticipant = (email: string) => {
+  const toggleParticipant = (userId: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(email)) {
-        next.delete(email);
+      if (next.has(userId)) {
+        next.delete(userId);
       } else {
-        next.add(email);
+        next.add(userId);
       }
       return next;
     });
@@ -50,12 +50,11 @@ export default function ParticipantSelector({ mode, onStart, onBack }: Participa
     if (selected.size === participants.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(participants.map((p) => p.email)));
+      setSelected(new Set(participants.map((p) => p.conferenceRecordUserId)));
     }
   };
 
   const MIN_PARTICIPANTS = 2;
-
   const modeLabel = mode === 'debate' ? 'Debate' : 'History';
 
   return (
@@ -94,18 +93,20 @@ export default function ParticipantSelector({ mode, onStart, onBack }: Participa
           <ul className="participant-list">
             {participants.map((p) => (
               <li
-                key={p.id}
-                className={`participant-item ${selected.has(p.email) ? 'participant-item--selected' : ''}`}
-                onClick={() => toggleParticipant(p.email)}
-                id={`participant-${p.id}`}
+                key={p.conferenceRecordUserId}
+                className={`participant-item ${selected.has(p.conferenceRecordUserId) ? 'participant-item--selected' : ''}`}
+                onClick={() => toggleParticipant(p.conferenceRecordUserId)}
+                id={`participant-${p.conferenceRecordUserId}`}
               >
-                <span className="participant-item__avatar">{p.avatar}</span>
+                <span className="participant-item__avatar">
+                  {p.name.charAt(0).toUpperCase()}
+                </span>
                 <div className="participant-item__info">
                   <span className="participant-item__name">{p.name}</span>
-                  <span className="participant-item__email">{p.email}</span>
+                  <span className="participant-item__email">{p.googleUserId || 'Google User'}</span>
                 </div>
-                <div className={`participant-item__check ${selected.has(p.email) ? 'checked' : ''}`}>
-                  {selected.has(p.email) ? '✓' : ''}
+                <div className={`participant-item__check ${selected.has(p.conferenceRecordUserId) ? 'checked' : ''}`}>
+                  {selected.has(p.conferenceRecordUserId) ? '✓' : ''}
                 </div>
               </li>
             ))}

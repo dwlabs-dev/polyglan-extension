@@ -74,7 +74,7 @@ function App() {
     <div className="app-container side-panel">
       <div className="glass-panel">
         <header>
-          <img src="logo.png" alt="Polyglan Logo" className="logo" />
+          <img src="/logo.png" alt="Polyglan Logo" className="logo" />
           <h1>Polyglan</h1>
         </header>
 

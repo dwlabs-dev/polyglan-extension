@@ -9,3 +9,10 @@ export async function getParticipants(conferenceRecord?: string): Promise<Partic
   const query = conferenceRecord ? `?conferenceRecord=${encodeURIComponent(conferenceRecord)}` : '';
   return apiFetch<ParticipantsResponse>(`/participants${query}`);
 }
+/**
+ * Fetch participants from the API by meeting code (e.g. abc-mnop-xyz).
+ * @param meetingCode - The conference code.
+ */
+export async function getLiveParticipants(meetingCode: string): Promise<ParticipantsResponse> {
+  return apiFetch<ParticipantsResponse>(`/participants?meetingCode=${encodeURIComponent(meetingCode)}`);
+}
