@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polyglan Color Debugger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-color: #f4f4f4;
+            --accent: #c8c836;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .logo {
+            width: 120px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 10px rgba(200, 200, 54, 0.3));
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 2.5rem;
+            margin: 0;
+            background: linear-gradient(135deg, #fff, #c8c836);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .color-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: slideUp 0.6s ease-out both;
+        }
+
+        .color-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            border-color: rgba(200, 200, 54, 0.4);
+        }
+
+        .preview {
+            width: 100%;
+            height: 150px;
+            border-radius: 12px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease;
+        }
+
+        .info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 300;
+        }
+
+        .value {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+        }
+
+        input[type="text"] {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            padding: 5px 10px;
+            width: 100px;
+            font-family: monospace;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .color-card:nth-child(1) { animation-delay: 0.1s; }
+        .color-card:nth-child(2) { animation-delay: 0.2s; }
+        .color-card:nth-child(3) { animation-delay: 0.3s; }
+        .color-card:nth-child(4) { animation-delay: 0.4s; }
+        .color-card:nth-child(5) { animation-delay: 0.5s; }
+
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <img src="/logo.png" alt="Polyglan Logo" class="logo" onerror="this.src='https://via.placeholder.com/120x120?text=Polyglan'">
+        <h1>Color Palette Debugger</h1>
+    </div>
+
+    <div class="container" id="color-container">
+        <!-- Cards will be generated here -->
+    </div>
+
+    <script>
+        const initialColors = [
+            '#c8c836',
+            '#fcfcf4',
+            '#68681c',
+            '#787820',
+            '#f4f4ec'
+        ];
+
+        const container = document.getElementById('color-container');
+
+        initialColors.forEach((color, index) => {
+            const card = document.createElement('div');
+            card.className = 'color-card';
+            
+            card.innerHTML = `
+                <div class="preview" id="preview-${index}" style="background-color: ${color}"></div>
+                <div class="info">
+                    <span class="label">Color ${index + 1}</span>
+                    <span class="value" id="val-${index}">${color.toUpperCase()}</span>
+                </div>
+                <div class="controls">
+                    <input type="color" value="${color}" oninput="updateColor(${index}, this.value)">
+                    <input type="text" value="${color}" oninput="updateColor(${index}, this.value)" id="text-${index}">
+                </div>
+            `;
+            
+            container.appendChild(card);
+        });
+
+        function updateColor(index, color) {
+            if (!/^#[0-9A-F]{6}$/i.test(color) && !/^#[0-9A-F]{3}$/i.test(color)) return;
+            
+            document.getElementById(`preview-${index}`).style.backgroundColor = color;
+            document.getElementById(`val-${index}`).innerText = color.toUpperCase();
+            document.getElementById(`text-${index}`).value = color;
+            
+            // Sync color input if text input changed
+            const colorInput = document.querySelectorAll('input[type="color"]')[index];
+            if (colorInput.value.toLowerCase() !== color.toLowerCase()) {
+                colorInput.value = color;
+            }
+        }
+    </script>
+</body>
+
+</html>

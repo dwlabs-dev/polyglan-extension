@@ -20,10 +20,8 @@ function App() {
   const [analysis, setAnalysis] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('[Polyglan] App loaded - Route:', window.location.href);
-  }, []);
-
-  useEffect(() => {
+    console.log('[Polyglan] App loaded');
+    
     const startCoActivityListener = async () => {
       try {
         const session = await (meet.addon as any).createAddonSession({
@@ -73,7 +71,6 @@ function App() {
 
       const modeLabel = mode === 'debate' ? 'Debate' : 'History';
 
-      // Try to sync via Meet SDK
       try {
         const session = await (meet.addon as any).createAddonSession({
           cloudProjectNumber: import.meta.env.VITE_GOOGLE_CLOUD_PROJECT_NUMBER,
@@ -89,7 +86,7 @@ function App() {
 
       setIsSessionActive(true);
       setView('active');
-      setStatus(`${modeLabel} iniciado com ${participantIds.length} participante(s)!`);
+      setStatus(`${modeLabel} iniciado!`);
     } catch (error) {
       console.error('Session start error:', error);
       setStatus('Erro ao iniciar sessão.');
@@ -105,64 +102,44 @@ function App() {
   };
 
   return (
-    <div className="app-container side-panel">
-      <div className="glass-panel">
-        <header>
-          <img src="/logo.png" alt="Polyglan Logo" className="logo" />
-          <h1>Polyglan</h1>
-        </header>
+    <div className="app-container">
+      <main className="flex-grow flex flex-col overflow-hidden">
+        {/* View: Mode Selection (Matches mockup) */}
+        {view === 'mode-select' && (
+          <ModeSelector />
+        )}
 
-        <main>
-          {/* View: Mode Selection */}
-          {view === 'mode-select' && (
-            <ModeSelector onSelectMode={handleSelectMode} />
-          )}
+        {/* View: Participant Selection (Legacy, will be replaced by ModeSelector logic) */}
+        {view === 'participant-select' && selectedMode && (
+          <ParticipantSelector
+            mode={selectedMode}
+            onStart={handleStartSession}
+            onBack={handleBack}
+          />
+        )}
 
-          {/* View: Participant Selection */}
-          {view === 'participant-select' && selectedMode && (
-            <ParticipantSelector
-              mode={selectedMode}
-              onStart={handleStartSession}
-              onBack={handleBack}
-            />
-          )}
-
-          {/* View: Active Session */}
-          {view === 'active' && (
-            <div className="active-session">
-              <div className="status-badge">
-                <span className={`dot ${isSessionActive ? 'active' : ''}`}></span>
-                {selectedMode === 'debate' ? 'Debate em Curso' : 'History em Curso'}
-              </div>
-
-              <p className="description">
-                Transcrição e análise em tempo real ativadas.
-              </p>
-
-              {status && <div className="status-message">{status}</div>}
-
-              {analysis && (
-                <div className="analysis-box">
-                  <h3>Insight da IA:</h3>
-                  <p>{analysis}</p>
+        {/* View: Active Session */}
+        {view === 'active' && (
+          <div className="flex flex-col items-center justify-center p-8 bg-[#FCFCF4] h-full overflow-hidden">
+             {/* Note: In active mode, ModeSelector also handles its own timer UI if we want it to. 
+                 But here we use the App's active view for now. */}
+             <div className="flex flex-col items-center gap-4">
+                <div className="text-[12px] font-bold uppercase tracking-widest border border-black px-4 py-1 rounded-full">
+                  Sessão em Curso
                 </div>
-              )}
-
-              <button
-                className="end-session-button"
-                onClick={handleEndSession}
-                id="end-session-button"
-              >
-                Encerrar Sessão
-              </button>
-            </div>
-          )}
-        </main>
-
-        <footer>
-          <span>v2.0.0 (Mode Selection)</span>
-        </footer>
-      </div>
+                <div className="text-[64px] font-light tracking-tighter tabular-nums">
+                  {status.includes('iniciado') ? 'ATIVO' : status}
+                </div>
+                <button
+                  className="mt-12 text-[12px] font-bold uppercase tracking-widest text-red-600 hover:opacity-60"
+                  onClick={handleEndSession}
+                >
+                  Encerrar Sessão
+                </button>
+             </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

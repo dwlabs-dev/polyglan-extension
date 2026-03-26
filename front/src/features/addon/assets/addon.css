@@ -1,137 +1,43 @@
+/* addon.css - Minimalist sidepanel adjustments */
 :root {
-  --primary-purple: #3b234a;
-  --secondary-purple: #523961;
-  --lavender: #baafc4;
-  --glass-bg: rgba(59, 35, 74, 0.7);
-  --glass-border: rgba(186, 175, 196, 0.2);
+  --bg-primary: #FCFCF4;
+  --bg-secondary: #F4F4EC;
+  --text-black: #000000;
+  --text-gray: #999999;
 }
 
 body {
   margin: 0;
   padding: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: var(--primary-purple);
-  color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  background-color: var(--bg-primary);
+  color: var(--text-black);
   height: 100vh;
   overflow: hidden;
 }
 
 .app-container {
-  width: 100vw;
-  max-width: 300px; /* Side panel standard width */
+  width: 100%;
   height: 100vh;
   margin: 0 auto;
-  padding: 16px;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, var(--primary-purple) 0%, var(--secondary-purple) 100%);
-  overflow-y: auto;
+  background-color: var(--bg-primary);
 }
 
+/* Remove legacy glassmorphism */
 .glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.logo {
-  width: 60px;
-  height: auto;
-  border-radius: 12px;
-}
-
-h1 {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--lavender);
-  margin: 0;
-  text-align: center;
-}
-
-main {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-items: center;
-}
-
-.description {
-  font-size: 0.9rem;
-  text-align: center;
-  color: var(--lavender);
-  line-height: 1.4;
-  margin: 0;
-}
-
-.debate-button {
-  background-color: var(--lavender);
-  color: var(--primary);
+  background: transparent;
+  backdrop-filter: none;
   border: none;
+  box-shadow: none;
+  padding: 0;
   width: 100%;
-  padding: 14px;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: transform 0.2s, background-color 0.2s;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
 }
 
-.debate-button:hover {
-  background-color: #c3bbc9;
-}
-
-.meeting-info {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px dashed var(--glass-border);
-  border-radius: 8px;
-  padding: 12px;
-  width: 100%;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-.meeting-info p {
-  margin: 0 0 8px 0;
-  font-size: 0.85rem;
-  color: var(--lavender);
-}
-
-.meeting-link {
-  color: #fff;
-  text-decoration: underline;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.meeting-link:hover {
-  color: var(--lavender);
-}
-
-footer {
-  margin-top: auto;
-  text-align: center;
-  font-size: 0.75rem;
-  color: var(--lavender);
-  opacity: 0.6;
-  padding-top: 20px;
+/* Ensure no conflicts with header/footer */
+header, footer {
+    width: 100%;
 }
