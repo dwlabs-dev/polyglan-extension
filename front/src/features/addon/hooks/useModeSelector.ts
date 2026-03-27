@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Participant } from '../../../types';
 import { getParticipants } from '../../../services/participants.service';
+import { useAuth } from '../../../hooks/useAuth';
 
 export function useModeSelector() {
+  const { getAuthHeader } = useAuth();
   const [step, setStep] = useState<'selection' | 'active'>('selection');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeMode, setActiveMode] = useState<string | null>(null);
@@ -19,7 +21,8 @@ export function useModeSelector() {
     const fetchParticipants = async () => {
       try {
         setLoading(true);
-        const data = await getParticipants();
+        const { Authorization } = getAuthHeader();
+        const data = await getParticipants(Authorization);
         if (data.status === 'success') {
           setParticipants(data.participants);
         } else {

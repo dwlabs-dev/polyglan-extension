@@ -8,13 +8,13 @@ export interface MeetParticipant {
   conferenceRecordUserId: string;
 }
 
-export async function getLiveMeet(): Promise<meet_v2.Meet> {
-  const authClient = await getAuthClient();
+export async function getLiveMeet(accessToken: string): Promise<meet_v2.Meet> {
+  const auth = new google.auth.OAuth2();
+  auth.setCredentials({ access_token: accessToken });
+
   const meetClient = google.meet({
-    version: 'v2', auth: authClient as any,
-    headers: {
-      'Authorization': `Bearer ${authClient.credentials.access_token}`,
-    }
+    version: 'v2', 
+    auth: auth
   });
 
   return meetClient;
@@ -26,23 +26,41 @@ export async function getLiveMeet(): Promise<meet_v2.Meet> {
  *
  * @param meetingCode - The conference record name (e.g. "meetCode/abc-mnop-xyz")
  */
-export async function listParticipants(): Promise<MeetParticipant[]> {
+export async function listParticipants(accessToken: string): Promise<MeetParticipant[]> {
   try {
-    const meetClient = await getLiveMeet();
-
-    const conferenceRecord = await getCurrentConferenceRecord();
+    const meetClient = await getLiveMeet(accessToken);
+    const conferenceRecord = await getCurrentConferenceRecord(accessToken);
 
     const response = await (meetClient.conferenceRecords as any).participants.list({
       parent: conferenceRecord.name
     });
 
-    const participants: MeetParticipant[] = (response.data.participants || []).map(
-      (p: any, index: number) => ({
-        googleUserId: p.signedinUser?.user || '',
-        conferenceRecordUserId: p.name || String(index + 1),
-        name: p.signedinUser?.displayName || p.anonymousUser?.displayName || `Participant ${index + 1}`
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: accessToken });
+    const oauth2 = google.oauth2({ version: 'v2', auth });
+    
+    let myUserResourceName = '';
+    try {
+      const { data } = await oauth2.userinfo.get();
+      myUserResourceName = data.id ? `users/${data.id}` : '';
+    } catch(e) {
+      console.warn('[MeetService] Could not fetch userinfo for exclusion.');
+    }
+
+    const rawParticipants = response.data.participants || [];
+    const participants: MeetParticipant[] = rawParticipants
+      .filter((p: any) => {
+        if (!myUserResourceName) return true;
+        // The participant's signedinUser.user ID looks like 'users/1234...'
+        return p.signedinUser?.user !== myUserResourceName;
       })
-    );
+      .map(
+        (p: any, index: number) => ({
+          googleUserId: p.signedinUser?.user || '',
+          conferenceRecordUserId: p.name || String(index + 1),
+          name: p.signedinUser?.displayName || p.anonymousUser?.displayName || `Participant ${index + 1}`
+        })
+      );
 
     console.log(`[MeetService] Found ${participants.length} participants from Meet API.`);
     return participants;
@@ -69,8 +87,8 @@ export async function createMeetSpace() {
   return response.data;
 }
 
-export async function getCurrentConferenceRecord() {
-  const meetClient = await getLiveMeet();
+export async function getCurrentConferenceRecord(accessToken: string) {
+  const meetClient = await getLiveMeet(accessToken);
 
   const response = await (meetClient.conferenceRecords as any).list({
     filter: `end_time IS NULL`

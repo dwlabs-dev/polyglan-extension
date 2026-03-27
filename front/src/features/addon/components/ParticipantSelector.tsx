@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Mode, Participant } from '../../../types';
 import { getParticipants } from '../../../services/participants.service';
+import { useAuth } from '../../../hooks/useAuth';
 
 interface ParticipantSelectorProps {
   mode: Mode;
@@ -9,6 +10,7 @@ interface ParticipantSelectorProps {
 }
 
 export default function ParticipantSelector({ mode, onStart, onBack }: ParticipantSelectorProps) {
+  const { getAuthHeader } = useAuth();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -18,7 +20,8 @@ export default function ParticipantSelector({ mode, onStart, onBack }: Participa
     const fetchParticipants = async () => {
       try {
         setLoading(true);
-        const data = await getParticipants();
+        const { Authorization } = getAuthHeader();
+        const data = await getParticipants(Authorization);
         if (data.status === 'success') {
           setParticipants(data.participants);
         } else {

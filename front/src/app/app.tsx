@@ -3,6 +3,7 @@ import { getMeetSession } from '../lib/meet';
 import ModeSelector from '../features/addon/components/ModeSelector';
 import ParticipantSelector from '../features/addon/components/ParticipantSelector';
 import { startSession } from '../services/session.service';
+import { useAuth } from '../hooks/useAuth';
 import type { Mode } from '../types';
 
 type View = 'mode-select' | 'participant-select' | 'active';
@@ -18,6 +19,8 @@ function App() {
   const [status, setStatus] = useState('');
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
+
+  const { isAuthenticated, loading, error } = useAuth();
 
   useEffect(() => {
     console.log('[Polyglan] App loaded');
@@ -91,6 +94,25 @@ function App() {
     setSelectedMode(null);
     setView('mode-select');
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-[#FCFCF4] text-black">
+        <div className="w-8 h-8 rounded-full border-[3px] border-[#999999] border-t-transparent animate-spin mb-4" />
+        <span className="text-xs font-bold uppercase tracking-widest text-[#999999]">Autenticando...</span>
+      </div>
+    );
+  }
+
+  if (error || !isAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-[#FCFCF4] text-red-600 px-8 text-center">
+        <span className="text-sm font-bold uppercase tracking-widest mb-2 border border-red-600 px-4 py-1 rounded-full">Erro de Autenticação</span>
+        <p className="text-xs font-medium">{error || 'Token inválido ou não autenticado.'}</p>
+        <p className="text-[10px] text-[#999999] mt-4 uppercase">Não é possível continuar.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">

@@ -11,7 +11,13 @@ const router = Router();
  */
 router.get('/api/participants', async (req: Request, res: Response) => {
   try {
-    const participants = await listParticipants();
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ status: 'error', message: 'Token de Autenticação não fornecido' });
+    }
+
+    const accessToken = authHeader.split(' ')[1];
+    const participants = await listParticipants(accessToken);
 
     res.json({ status: 'success', participants });
   } catch (error: any) {
