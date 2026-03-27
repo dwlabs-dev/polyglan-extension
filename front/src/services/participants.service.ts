@@ -3,16 +3,13 @@ import type { ParticipantsResponse } from '../types';
 
 /**
  * Fetch participants from the API.
- * @param conferenceRecord - Optional conference record name for real Meet API calls.
  */
-export async function getParticipants(conferenceRecord?: string): Promise<ParticipantsResponse> {
-  const query = conferenceRecord ? `?conferenceRecord=${encodeURIComponent(conferenceRecord)}` : '';
-  return apiFetch<ParticipantsResponse>(`/participants${query}`);
+export async function getParticipants(): Promise<ParticipantsResponse> {
+  return apiFetch<ParticipantsResponse>(`/participants`);
 }
 /**
- * Fetch participants from the API by meeting code (e.g. abc-mnop-xyz).
- * @param meetingCode - The conference code.
+ * Fetch participants from the API.
  */
-export async function getLiveParticipants(meetingCode: string): Promise<ParticipantsResponse> {
-  return apiFetch<ParticipantsResponse>(`/participants?meetingCode=${encodeURIComponent(meetingCode)}`);
+export async function getLiveParticipants(): Promise<ParticipantsResponse> {
+  return apiFetch<ParticipantsResponse>(`/participants`);
 }

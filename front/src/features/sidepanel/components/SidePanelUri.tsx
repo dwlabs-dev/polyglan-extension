@@ -1,10 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-    meet,
-    type MeetSidePanelClient,
-} from '@googleworkspace/meet-addons/meet.addons';
+import { type MeetSidePanelClient } from '@googleworkspace/meet-addons/meet.addons';
+import { getMeetSession } from '../../../lib/meet';
 
 export default function Page() {
     const [sidePanelClient, setSidePanelClient] = useState<MeetSidePanelClient>();
@@ -24,9 +22,7 @@ export default function Page() {
      */
     useEffect(() => {
         (async () => {
-            const session = await meet.addon.createAddonSession({
-                cloudProjectNumber: import.meta.env.VITE_GOOGLE_CLOUD_PROJECT_NUMBER,
-            });
+            const session = await getMeetSession();
             setSidePanelClient(await session.createSidePanelClient());
         })();
     }, []);

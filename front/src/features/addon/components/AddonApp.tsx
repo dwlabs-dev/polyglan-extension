@@ -1,6 +1,6 @@
 import '../assets/addon.css';
 import { useState, useEffect } from 'react';
-import { meet } from '@googleworkspace/meet-addons';
+import { getMeetSession } from '../../../lib/meet';
 
 interface CoActivityState {
   debateStarted: boolean;
@@ -14,9 +14,7 @@ function App() {
   useEffect(() => {
     const startCoActivityListener = async () => {
       try {
-        const session = await (meet.addon as any).createAddonSession({
-          cloudProjectNumber: import.meta.env.VITE_GOOGLE_CLOUD_PROJECT_NUMBER,
-        });
+        const session = await getMeetSession();
 
         await session.createCoActivityClient({
           onCoActivityStateChanged: (state: CoActivityState) => {
@@ -53,13 +51,8 @@ function App() {
       });
 
       // 2. Sincronizar via SDK para todos os participantes
-      // Assume que meet.addon já foi inicializado em main.tsx
-      const client = await (meet.addon as any).createCoActivityClient({});
-
-      await client.setCoActivityState({
-        debateStarted: true,
-        meetingId: "ABC"
-      });
+      const session = await getMeetSession();
+      await session.createCoActivityClient({});
 
       setStatus('Sincronização enviada para todos!');
       setIsDebateActive(true);

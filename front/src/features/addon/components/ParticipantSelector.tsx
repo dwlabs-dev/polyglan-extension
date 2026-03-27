@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getParticipants } from '../../../services/participants.service';
 import type { Mode, Participant } from '../../../types';
+import { getParticipants } from '../../../services/participants.service';
 
 interface ParticipantSelectorProps {
   mode: Mode;

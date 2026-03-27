@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { meet_v2 } from 'googleapis/build/src/apis/meet/v2';
 import { getAuthClient } from '../lib/google-auth.js';
 
 export interface MeetParticipant {
@@ -7,29 +8,32 @@ export interface MeetParticipant {
   conferenceRecordUserId: string;
 }
 
+export async function getLiveMeet(): Promise<meet_v2.Meet> {
+  const authClient = await getAuthClient();
+  const meetClient = google.meet({
+    version: 'v2', auth: authClient as any,
+    headers: {
+      'Authorization': `Bearer ${authClient.credentials.access_token}`,
+    }
+  });
+
+  return meetClient;
+}
+
 /**
  * List participants from a Google Meet conference record.
  * Falls back to mock data if no meetingCode is provided or API fails.
  *
  * @param meetingCode - The conference record name (e.g. "meetCode/abc-mnop-xyz")
  */
-export async function listParticipants(meetingCode?: string): Promise<MeetParticipant[]> {
-  if (!meetingCode) {
-    console.log('[MeetService] No conferenceRecord provided');
-    return [];
-  }
-
+export async function listParticipants(): Promise<MeetParticipant[]> {
   try {
-    const authClient = await getAuthClient();
-    const meetClient = google.meet({ version: 'v2', auth: authClient as any });
+    const meetClient = await getLiveMeet();
 
-    const conferenceRecord = await getCurrentConferenceRecord(meetingCode);
+    const conferenceRecord = await getCurrentConferenceRecord();
 
     const response = await (meetClient.conferenceRecords as any).participants.list({
-      parent: conferenceRecord.name,
-      headers: {
-        'Authorization': `Bearer ${authClient.credentials.access_token}`,
-      },
+      parent: conferenceRecord.name
     });
 
     const participants: MeetParticipant[] = (response.data.participants || []).map(
@@ -65,15 +69,11 @@ export async function createMeetSpace() {
   return response.data;
 }
 
-export async function getCurrentConferenceRecord(meetingCode: string) {
-  const authClient = await getAuthClient();
-  const meetClient = google.meet({ version: 'v2', auth: authClient as any });
+export async function getCurrentConferenceRecord() {
+  const meetClient = await getLiveMeet();
 
   const response = await (meetClient.conferenceRecords as any).list({
-    filter: `space.meeting_code="${meetingCode}" AND end_time IS NULL`,
-    headers: {
-      'Authorization': `Bearer ${authClient.credentials.access_token}`,
-    },
+    filter: `end_time IS NULL`
   })
 
   return response.data.conferenceRecords[0];

@@ -17,10 +17,7 @@ export const MeetingManager: React.FC = () => {
   useEffect(() => {
     const fetchParticipants = async () => {
       try {
-        const params = new URLSearchParams(window.location.search);
-        const meetingCode = params.get('meetingCode') || ''; 
-        
-        const response = await getLiveParticipants(meetingCode);
+        const response = await getLiveParticipants();
         if (response.status === 'success') {
           setParticipants(response.participants);
         }
@@ -102,15 +99,15 @@ export const MeetingManager: React.FC = () => {
             <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#999999] mb-4">
               Participantes ({participants.length})
             </h2>
-            
+
             <div className="space-y-2">
               {participants.map((user) => (
-                <div 
+                <div
                   key={user.conferenceRecordUserId}
                   onClick={() => toggleUser(user.conferenceRecordUserId)}
                   className={`flex items-center p-3 rounded-xl cursor-pointer transition-all border 
-                    ${selectedIds.has(user.conferenceRecordUserId) 
-                      ? 'bg-white border-black shadow-sm' 
+                    ${selectedIds.has(user.conferenceRecordUserId)
+                      ? 'bg-white border-black shadow-sm'
                       : 'bg-[#F4F4EC] border-transparent'}`}
                 >
                   <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-[#FCFCF4] text-xs font-bold mr-3">
@@ -129,15 +126,15 @@ export const MeetingManager: React.FC = () => {
           {/* Rodapé de Ações Fixo */}
           {selectedIds.size > 0 && (
             <footer className="p-6 bg-white border-t border-[#F0EEE6]">
-              <button 
+              <button
                 onClick={() => handleStart('História')}
                 className="w-full py-4 mb-3 rounded-full bg-black text-white font-bold text-[11px] uppercase tracking-widest active:scale-95 transition-all"
               >
                 Iniciar História
               </button>
-              
+
               {selectedIds.size >= 2 && (
-                <button 
+                <button
                   onClick={() => handleStart('Debate')}
                   className="w-full py-4 rounded-full bg-white text-black border border-black font-bold text-[11px] uppercase tracking-widest active:scale-95 transition-all"
                 >
@@ -153,7 +150,7 @@ export const MeetingManager: React.FC = () => {
           <div className="px-3 py-1 border border-black rounded-full text-[10px] font-bold uppercase tracking-widest mb-4">
             {activeMode}
           </div>
-          
+
           <div className="text-[72px] font-light tracking-tighter my-4 tabular-nums">
             {formatTime(seconds)}
           </div>

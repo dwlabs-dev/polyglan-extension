@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Participant, Mode } from '../../../types';
+import type { Participant } from '../../../types';
+import { getParticipants } from '../../../services/participants.service';
 
 export function useModeSelector() {
   const [step, setStep] = useState<'selection' | 'active'>('selection');
@@ -7,6 +8,32 @@ export function useModeSelector() {
   const [activeMode, setActiveMode] = useState<string | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
+  // API Data
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch participants
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      try {
+        setLoading(true);
+        const data = await getParticipants();
+        if (data.status === 'success') {
+          setParticipants(data.participants);
+        } else {
+          setError(data.message || 'Falha ao carregar participantes.');
+        }
+      } catch (e) {
+        setError('Erro de conexão com o servidor.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchParticipants();
+  }, []);
 
   // Timer logic
   useEffect(() => {
@@ -20,7 +47,7 @@ export function useModeSelector() {
   }, [step, isPaused]);
 
   const toggleParticipant = useCallback((id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   }, []);
@@ -56,5 +83,8 @@ export function useModeSelector() {
     startMode,
     reset,
     formatTime,
+    participants,
+    loading,
+    error,
   };
 }

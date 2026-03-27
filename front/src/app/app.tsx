@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { meet } from '@googleworkspace/meet-addons';
+import { getMeetSession } from '../lib/meet';
 import ModeSelector from '../features/addon/components/ModeSelector';
 import ParticipantSelector from '../features/addon/components/ParticipantSelector';
 import { startSession } from '../services/session.service';
@@ -21,12 +21,10 @@ function App() {
 
   useEffect(() => {
     console.log('[Polyglan] App loaded');
-    
+
     const startCoActivityListener = async () => {
       try {
-        const session = await (meet.addon as any).createAddonSession({
-          cloudProjectNumber: import.meta.env.VITE_GOOGLE_CLOUD_PROJECT_NUMBER,
-        });
+        const session = await getMeetSession();
 
         await session.createCoActivityClient({
           onCoActivityStateChanged: (state: CoActivityState) => {
@@ -48,11 +46,6 @@ function App() {
     startCoActivityListener();
   }, []);
 
-  const handleSelectMode = (mode: Mode) => {
-    setSelectedMode(mode);
-    setView('participant-select');
-  };
-
   const handleBack = () => {
     setView('mode-select');
     setSelectedMode(null);
@@ -72,9 +65,7 @@ function App() {
       const modeLabel = mode === 'debate' ? 'Debate' : 'History';
 
       try {
-        const session = await (meet.addon as any).createAddonSession({
-          cloudProjectNumber: import.meta.env.VITE_GOOGLE_CLOUD_PROJECT_NUMBER,
-        });
+        const session = await getMeetSession();
         const client = await session.createCoActivityClient({});
         await client.setCoActivityState({
           debateStarted: true,
@@ -121,22 +112,22 @@ function App() {
         {/* View: Active Session */}
         {view === 'active' && (
           <div className="flex flex-col items-center justify-center p-8 bg-[#FCFCF4] h-full overflow-hidden">
-             {/* Note: In active mode, ModeSelector also handles its own timer UI if we want it to. 
+            {/* Note: In active mode, ModeSelector also handles its own timer UI if we want it to. 
                  But here we use the App's active view for now. */}
-             <div className="flex flex-col items-center gap-4">
-                <div className="text-[12px] font-bold uppercase tracking-widest border border-black px-4 py-1 rounded-full">
-                  Sessão em Curso
-                </div>
-                <div className="text-[64px] font-light tracking-tighter tabular-nums">
-                  {status.includes('iniciado') ? 'ATIVO' : status}
-                </div>
-                <button
-                  className="mt-12 text-[12px] font-bold uppercase tracking-widest text-red-600 hover:opacity-60"
-                  onClick={handleEndSession}
-                >
-                  Encerrar Sessão
-                </button>
-             </div>
+            <div className="flex flex-col items-center gap-4">
+              <div className="text-[12px] font-bold uppercase tracking-widest border border-black px-4 py-1 rounded-full">
+                Sessão em Curso
+              </div>
+              <div className="text-[64px] font-light tracking-tighter tabular-nums">
+                {status.includes('iniciado') ? 'ATIVO' : status}
+              </div>
+              <button
+                className="mt-12 text-[12px] font-bold uppercase tracking-widest text-red-600 hover:opacity-60"
+                onClick={handleEndSession}
+              >
+                Encerrar Sessão
+              </button>
+            </div>
           </div>
         )}
       </main>

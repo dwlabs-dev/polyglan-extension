@@ -11,10 +11,8 @@ async function initialize() {
   if (meetSdk) {
     console.log('[Polyglan] meet_sdk parameter detected, starting handshake...');
     try {
-      const { meet } = await import('@googleworkspace/meet-addons');
-      await meet.addon.createAddonSession({
-        cloudProjectNumber: import.meta.env.VITE_GOOGLE_CLOUD_PROJECT_NUMBER || '1082613234514'
-      });
+      const { getMeetSession } = await import('../lib/meet');
+      await getMeetSession();
       console.log('[Polyglan] ✅ Handshake completed!');
     } catch (e) {
       console.error('[Polyglan] ❌ Handshake failed:', e);
