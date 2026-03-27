@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
+import { ensureAuthenticated } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
@@ -8,7 +9,7 @@ const router = Router();
  * Body: { type: "Debate" | "History", participants: string[] }
  * Requires at least 2 participants.
  */
-router.post('/api/session/start', (req: Request, res: Response) => {
+router.post('/api/session/start', ensureAuthenticated, (req: Request, res: Response) => {
   const { type, participants } = req.body;
 
   // Validate type
