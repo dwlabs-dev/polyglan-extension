@@ -8,7 +8,7 @@ export default function Page() {
     const [sidePanelClient, setSidePanelClient] = useState<MeetSidePanelClient>();
 
     // Launches the main stage when the main button is clicked.
-    async function startActivity(e: unknown) {
+    async function startActivity() {
         if (!sidePanelClient) {
             throw new Error('Side Panel is not yet initialized!');
         }

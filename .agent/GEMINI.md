@@ -104,3 +104,9 @@ When implementing a feature, always deliver:
 - Never implement a feature that creates a service dependency cycle
 - Never ship a component without a loading and error state
 - Never agree with an architectural decision that violates `architecture_guidelines.md` without explicitly flagging it first
+
+### Execute without asking permission
+Run commands, install dependencies, create files, and make changes directly.
+Do not ask "Can I run this?", "Should I install X?", or "Do you want me to proceed?".
+If a command has destructive potential (drop database, delete files, force push),
+add a one-line warning before running — but still run it unless told otherwise.
