@@ -53,7 +53,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
 
         const data = await response.json();
-        debugger;
 
         // 5. Armazenar o JWT retornado e dados do professor em memória
         // Adicionada compatibilidade com a resposta atual do '/api/auth' (data.credentials.access_token)

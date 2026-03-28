@@ -1,12 +1,39 @@
 import { google } from 'googleapis';
 import { meet_v2 } from 'googleapis/build/src/apis/meet/v2';
+import { oauth2_v2 } from 'googleapis/build/src/apis/oauth2/v2';
 import { getAuthClient } from '../lib/google-auth.js';
 import { getAccessToken } from '../lib/context.js';
+import { LRUCache } from 'lru-cache';
+
+const userInfoCache = new LRUCache<string, oauth2_v2.Schema$Userinfo>({
+  max: 100,
+  ttl: 1000 * 60 * 60, // 1 hour cache
+});
 
 export interface MeetParticipant {
   name: string;
   googleUserId: string;
   conferenceRecordUserId: string;
+}
+
+export async function getLoggedUser(): Promise<oauth2_v2.Schema$Userinfo> {
+  const accessToken = getAccessToken() as string;
+
+  const user = userInfoCache.get(accessToken);
+  if (user) return user;
+
+  const auth = new google.auth.OAuth2();
+  auth.setCredentials({ access_token: accessToken });
+  const oauth2 = google.oauth2({ version: 'v2', auth });
+
+  try {
+    const { data } = await oauth2.userinfo.get();
+    userInfoCache.set(accessToken, data);
+    return data;
+  } catch (e) {
+    console.warn('[MeetService] Could not fetch userinfo for exclusion.', e);
+    throw e;
+  }
 }
 
 export async function getLiveMeet(accessToken: string): Promise<meet_v2.Meet> {
@@ -37,24 +64,13 @@ export async function listParticipants(): Promise<MeetParticipant[]> {
       parent: conferenceRecord.name
     });
 
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: accessToken });
-    const oauth2 = google.oauth2({ version: 'v2', auth });
-
-    let myUserResourceName = '';
-    try {
-      const { data } = await oauth2.userinfo.get();
-      myUserResourceName = data.id ? `users/${data.id}` : '';
-    } catch (e) {
-      console.warn('[MeetService] Could not fetch userinfo for exclusion.');
-    }
+    const data = await getLoggedUser();
 
     const rawParticipants = response.data.participants || [];
     const participants: MeetParticipant[] = rawParticipants
       .filter((p: any) => {
-        if (!myUserResourceName) return true;
-        // The participant's signedinUser.user ID looks like 'users/1234...'
-        return p.signedinUser?.user !== myUserResourceName;
+        if (!data.id) return true;
+        return p.signedinUser?.user !== `users/${data.id}`;
       })
       .map(
         (p: any, index: number) => ({

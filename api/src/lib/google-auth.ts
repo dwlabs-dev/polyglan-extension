@@ -6,8 +6,11 @@ import { LRUCache } from 'lru-cache';
 const CREDENTIALS_PATH = path.join(process.cwd(), '/infra/google/credentials.json');
 
 const SCOPES = [
+  'https://www.googleapis.com/auth/userinfo.email',
   'https://www.googleapis.com/auth/meetings.space.created',
   'https://www.googleapis.com/auth/meetings.space.readonly',
+  'https://www.googleapis.com/auth/admin.directory.user.readonly',
+  'https://www.googleapis.com/auth/meetings.conference.media.audio.readonly'
 ];
 
 // Initialize cache with a max of 1 item (the auth client)
@@ -24,13 +27,13 @@ const AUTH_CLIENT_KEY = 'google_auth_client';
  */
 export async function getAuthClient(): Promise<OAuth2Client> {
   let cachedClient = cache.get(AUTH_CLIENT_KEY);
-  
+
   if (cachedClient) {
     return cachedClient;
   }
 
   console.log('[GoogleAuth] No cached client found in memory. Authenticating...');
-  
+
   const client = await authenticate({
     scopes: SCOPES,
     keyfilePath: CREDENTIALS_PATH,
@@ -38,7 +41,7 @@ export async function getAuthClient(): Promise<OAuth2Client> {
 
   cachedClient = client as unknown as OAuth2Client;
   cache.set(AUTH_CLIENT_KEY, cachedClient);
-  
+
   console.log('[GoogleAuth] Authenticated and cached client in memory.');
 
   return cachedClient;
