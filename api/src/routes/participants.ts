@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { listParticipants } from '../services/meet.service.js';
-import { ensureAuthenticated } from '../middlewares/auth.middleware.js';
+import { listParticipants } from '@services/meet.service.js';
+import { ensureAuthenticated } from '@middlewares/auth.middleware.js';
 
 const router = Router();
 

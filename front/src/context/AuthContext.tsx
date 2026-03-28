@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, type ReactNode } from 'react';
 import { getMeetSession } from '../lib/meet';
+import { setAuthToken } from '../services/api';
 
 interface AuthContextValue {
   jwt: string | null;
@@ -62,6 +63,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           throw new Error('Token de acesso não encontrado na resposta.');
         }
 
+        setAuthToken(token);
         setJwt(token);
       } catch (err: any) {
         console.error('[AuthProvider] Erro de Autenticação:', err);

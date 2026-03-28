@@ -1,8 +1,8 @@
 import { google } from 'googleapis';
 import { meet_v2 } from 'googleapis/build/src/apis/meet/v2';
 import { oauth2_v2 } from 'googleapis/build/src/apis/oauth2/v2';
-import { getAuthClient } from '../lib/google-auth.js';
-import { getAccessToken } from '../lib/context.js';
+import { getAuthClient } from '@lib/google-auth.js';
+import { getAccessToken } from '@lib/context.js';
 import { LRUCache } from 'lru-cache';
 
 const userInfoCache = new LRUCache<string, oauth2_v2.Schema$Userinfo>({

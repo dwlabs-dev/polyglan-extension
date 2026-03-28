@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { contextStore } from '../lib/context.js';
+import { contextStore } from '@lib/context.js';
 
 /**
  * Middleware to ensure the request is authenticated with a Bearer token.

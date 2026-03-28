@@ -2,11 +2,11 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 
-import meetRouter from './routes/meet.js';
-import authRouter from './routes/auth.js';
-import healthRouter from './routes/health.js';
-import sessionRouter from './routes/session.js';
-import participantsRouter from './routes/participants.js';
+import meetRouter from '@routes/meet.js';
+import authRouter from '@routes/auth.js';
+import healthRouter from '@routes/health.js';
+import sessionRouter from '@routes/session.js';
+import participantsRouter from '@routes/participants.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;

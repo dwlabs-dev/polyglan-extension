@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { ensureAuthenticated } from '../middlewares/auth.middleware.js';
-import * as MeetService from '../services/meet.service.js';
-import { PolyglanService } from '../services/polyglan.service.js';
-import { getAccessToken } from '../lib/context.js';
+import { ensureAuthenticated } from '@middlewares/auth.middleware.js';
+import * as MeetService from '@services/meet.service.js';
+import { PolyglanService } from '@services/polyglan.service.js';
+import { getAccessToken } from '@lib/context.js';
 
 const router = Router();
 
@@ -26,13 +26,14 @@ router.post('/api/session/start', ensureAuthenticated, async (req: Request, res:
     return;
   }
 
-  // Validate participants
-  if (!Array.isArray(participants) || participants.length < 2) {
-    res.status(400).json({
-      status: 'error',
-      message: 'At least 2 participants are required.',
-    });
-    return;
+  if (type == "Debate") {
+    if (!Array.isArray(participants) || participants.length < 2) {
+      res.status(400).json({
+        status: 'error',
+        message: 'At least 2 participants are required.',
+      });
+      return;
+    }
   }
 
   try {

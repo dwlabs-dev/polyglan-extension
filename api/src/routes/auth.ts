@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { getAuthClient } from '../lib/google-auth.js';
+import { getAuthClient } from '@lib/google-auth.js';
 const router = Router();
 
 /**
