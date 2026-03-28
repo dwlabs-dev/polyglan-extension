@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Participant } from '../../../types';
 import { getParticipants } from '../../../services/participants.service';
+import { startSession } from '../../../services/session.service';
 import { useAuth } from '../../../hooks/useAuth';
+import type { Mode } from '../../../types';
 
 export function useModeSelector() {
   const { getAuthHeader } = useAuth();
@@ -55,11 +57,18 @@ export function useModeSelector() {
     );
   }, []);
 
-  const startMode = useCallback((modeName: string) => {
+  const startMode = useCallback(async (modeName: Mode) => {
     setActiveMode(modeName);
     setStep('active');
     setIsPaused(false);
-  }, []);
+
+    try {
+      console.log(`[useModeSelector] Triggering backend session for ${modeName}...`);
+      await startSession(modeName, selectedIds);
+    } catch (e) {
+      console.error('[useModeSelector] Failed to initialize backend session:', e);
+    }
+  }, [selectedIds]);
 
   const reset = useCallback(() => {
     setStep('selection');

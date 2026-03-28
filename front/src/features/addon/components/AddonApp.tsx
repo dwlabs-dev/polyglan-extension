@@ -1,6 +1,7 @@
-import '../assets/addon.css';
+import '@assets/addon.css';
 import { useState, useEffect } from 'react';
-import { getMeetSession } from '../../../lib/meet';
+import { getMeetSession } from '@lib/meet';
+import { startSession } from '@services/session.service';
 
 interface CoActivityState {
   debateStarted: boolean;
@@ -41,14 +42,11 @@ function App() {
     setStatus('Iniciando sincronização...');
 
     try {
-      // 1. Notificar o backend (opcional, para logs/persistência)
-      await fetch('/api/session/start-debate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ meetingId: "ABC" }),
-      });
+      // 1. Notificar o backend unificado
+      console.log(`[AddonApp] Starting backend session for debate...`);
+      // For now, passing empty participants as selection isn't in this screen,
+      // or we'd ideally pass the current participant list.
+      await startSession('debate', []);
 
       // 2. Sincronizar via SDK para todos os participantes
       const session = await getMeetSession();

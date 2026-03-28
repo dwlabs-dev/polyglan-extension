@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getLiveParticipants } from '../../../services/participants.service';
-import type { Participant } from '../../../types';
+import { getLiveParticipants } from '@services/participants.service';
+import { startSession } from '@services/session.service';
+import type { Participant } from '@types';
 
 type AppState = 'selection' | 'active';
 type ActivityMode = 'História' | 'Debate';
@@ -52,11 +53,19 @@ export const MeetingManager: React.FC = () => {
     });
   };
 
-  const handleStart = (mode: ActivityMode) => {
+  const handleStart = async (mode: ActivityMode) => {
     setActiveMode(mode);
     setStep('active');
     setSeconds(0);
     setIsActive(true);
+
+    try {
+      console.log(`[MeetingManager] Starting backend session for ${mode}...`);
+      const backendMode = mode === 'Debate' ? 'debate' : 'history';
+      await startSession(backendMode, Array.from(selectedIds));
+    } catch (error) {
+      console.error('[MeetingManager] Failed to start backend session:', error);
+    }
   };
 
   const resetSession = () => {

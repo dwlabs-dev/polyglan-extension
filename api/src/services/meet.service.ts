@@ -114,3 +114,40 @@ export async function getCurrentConferenceRecord(accessToken: string) {
 
   return response.data.conferenceRecords[0];
 }
+
+/**
+ * Initialize the Google Meet Media API (Audio Readonly).
+ * Mocks the WebRTC handshake and stream setup.
+ */
+export async function initializeMediaStream(conferenceRecordName: string) {
+  const accessToken = getAccessToken() as string;
+  const auth = new google.auth.OAuth2();
+  auth.setCredentials({ access_token: accessToken });
+
+  console.log(`[MeetService] Initializing Audio Readonly stream for ${conferenceRecordName}...`);
+  console.log(`[MeetService] Using scope: https://www.googleapis.com/auth/meetings.conference.media.audio.readonly`);
+
+  // Simulate WebRTC/SDP negotiation with the Meet Media API
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  console.log(`[MeetService] Stream connected. Listening to audio flows...`);
+
+  // In a real scenario, this would begin consuming the RTP stream.
+  return { status: 'streaming', conferenceRecordName };
+}
+
+/**
+ * Send a message to the Google Meet chat.
+ * Note: Uses the Google Chat API as proxy since Meet REST API is read-only for chats.
+ */
+export async function sendMeetingChatMessage(conferenceRecordName: string, text: string) {
+  const accessToken = getAccessToken() as string;
+  const auth = new google.auth.OAuth2();
+  auth.setCredentials({ access_token: accessToken });
+
+  console.log(`[MeetService] Posting to meeting chat [${conferenceRecordName}]: ${text}`);
+
+  // In a real scenario, this would call spaces.messages.create via the Chat API
+  // targeting the space linked to this conference record.
+  return { status: 'sent', text };
+}

@@ -7,6 +7,7 @@ import type { SessionStartRequest, SessionStartResponse, Mode } from '../types';
 export async function startSession(mode: Mode, participantIds: string[]): Promise<SessionStartResponse> {
   const modeType: SessionStartRequest['type'] = mode === 'debate' ? 'Debate' : 'History';
 
+  debugger;
   return apiFetch<SessionStartResponse>('/session/start', {
     method: 'POST',
     body: JSON.stringify({

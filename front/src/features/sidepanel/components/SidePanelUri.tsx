@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { type MeetSidePanelClient } from '@googleworkspace/meet-addons/meet.addons';
-import { getMeetSession } from '../../../lib/meet';
+import { getMeetSession } from '@lib/meet';
 
 export default function Page() {
     const [sidePanelClient, setSidePanelClient] = useState<MeetSidePanelClient>();
