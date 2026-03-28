@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { meet_v2 } from 'googleapis/build/src/apis/meet/v2';
 import { getAuthClient } from '../lib/google-auth.js';
+import { getAccessToken } from '../lib/context.js';
 
 export interface MeetParticipant {
   name: string;
@@ -13,7 +14,7 @@ export async function getLiveMeet(accessToken: string): Promise<meet_v2.Meet> {
   auth.setCredentials({ access_token: accessToken });
 
   const meetClient = google.meet({
-    version: 'v2', 
+    version: 'v2',
     auth: auth
   });
 
@@ -26,8 +27,9 @@ export async function getLiveMeet(accessToken: string): Promise<meet_v2.Meet> {
  *
  * @param meetingCode - The conference record name (e.g. "meetCode/abc-mnop-xyz")
  */
-export async function listParticipants(accessToken: string): Promise<MeetParticipant[]> {
+export async function listParticipants(): Promise<MeetParticipant[]> {
   try {
+    const accessToken = getAccessToken() as string;
     const meetClient = await getLiveMeet(accessToken);
     const conferenceRecord = await getCurrentConferenceRecord(accessToken);
 
@@ -38,12 +40,12 @@ export async function listParticipants(accessToken: string): Promise<MeetPartici
     const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token: accessToken });
     const oauth2 = google.oauth2({ version: 'v2', auth });
-    
+
     let myUserResourceName = '';
     try {
       const { data } = await oauth2.userinfo.get();
       myUserResourceName = data.id ? `users/${data.id}` : '';
-    } catch(e) {
+    } catch (e) {
       console.warn('[MeetService] Could not fetch userinfo for exclusion.');
     }
 

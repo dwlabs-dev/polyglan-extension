@@ -10,10 +10,9 @@ const router = Router();
  * Lists participants from a Google Meet conference record.
  * Falls back to mock data if no conferenceRecord is provided.
  */
-router.get('/api/participants', ensureAuthenticated, async (req: Request, res: Response) => {
+router.get('/api/participants', ensureAuthenticated, async (_req: Request, res: Response) => {
   try {
-    const accessToken = (req as any).accessToken;
-    const participants = await listParticipants(accessToken);
+    const participants = await listParticipants();
 
     res.json({ status: 'success', participants });
   } catch (error: any) {
