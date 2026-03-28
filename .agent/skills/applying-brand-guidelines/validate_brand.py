@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Brand Validation Script
-Validates content against brand guidelines including colors, fonts, tone, and messaging.
+Polyglan Brand Validation Script
+Validates content, components, and documents against Polyglan brand guidelines.
+Checks colors, fonts, tone, session mode rules, and interface patterns.
 """
 
 import json
@@ -11,21 +12,21 @@ from dataclasses import asdict, dataclass
 
 @dataclass
 class BrandGuidelines:
-    """Brand guidelines configuration"""
+    """Polyglan brand guidelines configuration."""
 
     brand_name: str
     primary_colors: list[str]
-    secondary_colors: list[str]
+    extended_colors: list[str]
     fonts: list[str]
     tone_keywords: list[str]
     prohibited_words: list[str]
+    prohibited_colors: list[str]
     tagline: str | None = None
-    logo_usage_rules: dict | None = None
 
 
 @dataclass
 class ValidationResult:
-    """Result of brand validation"""
+    """Result of Polyglan brand validation."""
 
     passed: bool
     score: float
@@ -35,44 +36,56 @@ class ValidationResult:
 
 
 class BrandValidator:
-    """Validates content against brand guidelines"""
+    """Validates content and components against Polyglan brand guidelines."""
 
     def __init__(self, guidelines: BrandGuidelines):
         self.guidelines = guidelines
 
     def validate_colors(self, content: str) -> tuple[list[str], list[str]]:
         """
-        Validate color usage in content (hex codes, RGB, color names)
+        Validate color usage. Flags non-brand colors and explicitly prohibited colors.
         Returns: (violations, warnings)
         """
         violations = []
         warnings = []
 
-        # Find hex colors
         hex_pattern = r"#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{3}"
         found_colors = re.findall(hex_pattern, content)
 
-        # Find RGB colors
         rgb_pattern = r"rgb\s*\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)"
         found_colors.extend(re.findall(rgb_pattern, content, re.IGNORECASE))
 
-        approved_colors = self.guidelines.primary_colors + self.guidelines.secondary_colors
+        approved = (
+            [c.upper() for c in self.guidelines.primary_colors] +
+            [c.upper() for c in self.guidelines.extended_colors]
+        )
+        prohibited = [c.upper() for c in self.guidelines.prohibited_colors]
 
         for color in found_colors:
-            if color.upper() not in [c.upper() for c in approved_colors]:
-                violations.append(f"Unapproved color used: {color}")
+            color_upper = color.upper()
+            if color_upper in prohibited:
+                violations.append(
+                    f"Prohibited color used: {color} — "
+                    f"see REFERENCE.md for approved Polyglan palette"
+                )
+            elif color_upper not in approved:
+                warnings.append(
+                    f"Non-brand color detected: {color} — "
+                    f"verify it's intentional or replace with approved palette"
+                )
 
         return violations, warnings
 
     def validate_fonts(self, content: str) -> tuple[list[str], list[str]]:
         """
-        Validate font usage in content
+        Validate font usage. Flags Inter, Roboto, Arial as violations.
         Returns: (violations, warnings)
         """
         violations = []
         warnings = []
 
-        # Common font specification patterns
+        prohibited_fonts = ["inter", "roboto", "arial", "comic sans", "papyrus", "times new roman"]
+
         font_patterns = [
             r'font-family\s*:\s*["\']?([^;"\']+)["\']?',
             r"font:\s*[^;]*\s+([A-Za-z][A-Za-z\s]+)(?:,|;|\s+\d)",
@@ -84,117 +97,166 @@ class BrandValidator:
             found_fonts.extend(matches)
 
         for font in found_fonts:
-            font_clean = font.strip().lower()
-            # Check if any approved font is in the found font string
-            if not any(approved.lower() in font_clean for approved in self.guidelines.fonts):
-                violations.append(f"Unapproved font used: {font}")
+            font_lower = font.strip().lower()
+            for prohibited in prohibited_fonts:
+                if prohibited in font_lower:
+                    violations.append(
+                        f"Prohibited font used: '{font}' — "
+                        f"use FreeSans, Nunito, or DM Sans instead"
+                    )
+                    break
+            else:
+                approved_match = any(
+                    approved.lower() in font_lower
+                    for approved in self.guidelines.fonts
+                )
+                if not approved_match:
+                    warnings.append(
+                        f"Unrecognized font: '{font}' — "
+                        f"confirm it's part of the approved Polyglan type system"
+                    )
 
         return violations, warnings
 
     def validate_tone(self, content: str) -> tuple[list[str], list[str]]:
         """
-        Validate tone and messaging
+        Validate tone and messaging alignment.
         Returns: (violations, warnings)
         """
         violations = []
         warnings = []
 
-        # Check for prohibited words
         content_lower = content.lower()
+
         for word in self.guidelines.prohibited_words:
             if word.lower() in content_lower:
-                violations.append(f"Prohibited word/phrase used: '{word}'")
+                violations.append(f"Prohibited word/phrase: '{word}'")
 
-        # Check for tone keywords (should have at least some)
         tone_matches = sum(
-            1 for keyword in self.guidelines.tone_keywords if keyword.lower() in content_lower
+            1 for kw in self.guidelines.tone_keywords if kw.lower() in content_lower
         )
-
         if tone_matches == 0 and len(content) > 100:
             warnings.append(
-                f"Content may not align with brand tone. "
-                f"Consider using terms like: {', '.join(self.guidelines.tone_keywords[:5])}"
+                f"Content may not reflect Polyglan tone. "
+                f"Consider incorporating: {', '.join(self.guidelines.tone_keywords[:5])}"
             )
 
         return violations, warnings
 
     def validate_brand_name(self, content: str) -> tuple[list[str], list[str]]:
         """
-        Validate brand name usage and capitalization
+        Validate brand name capitalization.
         Returns: (violations, warnings)
         """
         violations = []
         warnings = []
 
-        # Find all variations of the brand name
-        brand_pattern = re.compile(re.escape(self.guidelines.brand_name), re.IGNORECASE)
-        matches = brand_pattern.findall(content)
+        pattern = re.compile(re.escape(self.guidelines.brand_name), re.IGNORECASE)
+        matches = pattern.findall(content)
 
         for match in matches:
             if match != self.guidelines.brand_name:
                 violations.append(
-                    f"Incorrect brand name capitalization: '{match}' "
-                    f"should be '{self.guidelines.brand_name}'"
+                    f"Incorrect brand name: '{match}' — "
+                    f"must be '{self.guidelines.brand_name}'"
                 )
 
         return violations, warnings
 
-    def calculate_score(self, violations: list[str], warnings: list[str]) -> float:
-        """Calculate compliance score (0-100)"""
-        violation_penalty = len(violations) * 10
-        warning_penalty = len(warnings) * 3
+    def validate_ui_patterns(self, content: str) -> tuple[list[str], list[str]]:
+        """
+        Validate UI-specific patterns for React/frontend code.
+        Flags use of localStorage for tokens and missing dark mode considerations.
+        Returns: (violations, warnings)
+        """
+        violations = []
+        warnings = []
 
-        score = max(0, 100 - violation_penalty - warning_penalty)
+        if "localStorage" in content and "token" in content.lower():
+            violations.append(
+                "localStorage used for token storage — "
+                "Polyglan requires in-memory auth state (React context)"
+            )
+
+        if "border-radius" in content:
+            non_pill_pattern = r"border-radius\s*:\s*(?!9999px|var\(--radius-full\))[0-9]+px"
+            matches = re.findall(non_pill_pattern, content)
+            for match in matches:
+                warnings.append(
+                    f"Non-pill border-radius found: '{match}' — "
+                    f"buttons must use 9999px (pill shape)"
+                )
+
+        if "#FFFFFF" in content.upper() and "background" in content.lower():
+            warnings.append(
+                "Pure white #FFFFFF used as background — "
+                "prefer Cream #FAF5EE for Polyglan surfaces"
+            )
+
+        if "#000000" in content.upper():
+            warnings.append(
+                "Pure black #000000 detected — "
+                "prefer Dark Brown #2C2420 for Polyglan dark surfaces"
+            )
+
+        return violations, warnings
+
+    def calculate_score(self, violations: list[str], warnings: list[str]) -> float:
+        """Calculate brand compliance score (0–100)."""
+        score = max(0, 100 - (len(violations) * 10) - (len(warnings) * 3))
         return round(score, 2)
 
     def generate_suggestions(self, violations: list[str], warnings: list[str]) -> list[str]:
-        """Generate helpful suggestions based on violations and warnings"""
+        """Generate actionable suggestions based on violations and warnings."""
         suggestions = []
 
-        if any("color" in v.lower() for v in violations):
+        if any("color" in v.lower() or "color" in w.lower() for v in violations for w in warnings):
             suggestions.append(
-                f"Use approved colors: Primary: {', '.join(self.guidelines.primary_colors[:3])}"
+                "Primary palette: Mustard Yellow #F4A900, Terracotta #C1666B, "
+                "Warm Beige #D4B896, Chocolate Brown #4A403A — see REFERENCE.md"
             )
 
         if any("font" in v.lower() for v in violations):
-            suggestions.append(f"Use approved fonts: {', '.join(self.guidelines.fonts)}")
+            suggestions.append(
+                "Use FreeSans as primary display font with Nunito or DM Sans as fallback"
+            )
 
         if any("tone" in w.lower() for w in warnings):
             suggestions.append(
-                f"Incorporate brand tone keywords: {', '.join(self.guidelines.tone_keywords[:5])}"
+                f"Align content with Polyglan tone: "
+                f"{', '.join(self.guidelines.tone_keywords[:5])}"
             )
 
         if any("brand name" in v.lower() for v in violations):
-            suggestions.append(f"Always capitalize brand name as: {self.guidelines.brand_name}")
+            suggestions.append(f"Always write brand name as: {self.guidelines.brand_name}")
+
+        if any("localStorage" in v for v in violations):
+            suggestions.append(
+                "Store auth tokens in React context (AuthContext.tsx), never in localStorage"
+            )
 
         return suggestions
 
     def validate(self, content: str) -> ValidationResult:
         """
-        Perform complete brand validation
+        Run full Polyglan brand validation on content.
         Returns: ValidationResult
         """
         all_violations = []
         all_warnings = []
 
-        # Run all validation checks
-        color_v, color_w = self.validate_colors(content)
-        all_violations.extend(color_v)
-        all_warnings.extend(color_w)
+        checks = [
+            self.validate_colors(content),
+            self.validate_fonts(content),
+            self.validate_tone(content),
+            self.validate_brand_name(content),
+            self.validate_ui_patterns(content),
+        ]
 
-        font_v, font_w = self.validate_fonts(content)
-        all_violations.extend(font_v)
-        all_warnings.extend(font_w)
+        for violations, warnings in checks:
+            all_violations.extend(violations)
+            all_warnings.extend(warnings)
 
-        tone_v, tone_w = self.validate_tone(content)
-        all_violations.extend(tone_v)
-        all_warnings.extend(tone_w)
-
-        brand_v, brand_w = self.validate_brand_name(content)
-        all_violations.extend(brand_v)
-        all_warnings.extend(brand_w)
-
-        # Calculate score and generate suggestions
         score = self.calculate_score(all_violations, all_warnings)
         suggestions = self.generate_suggestions(all_violations, all_warnings)
 
@@ -207,117 +269,82 @@ class BrandValidator:
         )
 
 
+def get_polyglan_guidelines() -> BrandGuidelines:
+    """
+    Return the official Polyglan brand guidelines.
+    Source of truth: REFERENCE.md and SKILL.md in this repository.
+    """
+    return BrandGuidelines(
+        brand_name="Polyglan",
+        primary_colors=["#F4A900", "#C1666B", "#D4B896", "#4A403A"],
+        extended_colors=["#2C2420", "#EDE0D0", "#FAF5EE", "#C98F00", "#A0484D", "#8C7B72"],
+        fonts=["FreeSans", "Nunito", "DM Sans", "sans-serif"],
+        tone_keywords=[
+            "intelligence", "education", "collaboration", "excellence",
+            "professor", "student", "session", "debate", "history",
+        ],
+        prohibited_words=["cheap", "boring", "generic", "basic", "unprofessional"],
+        prohibited_colors=["#0066CC", "#003366", "#6C757D"],  # Acme blues — wrong brand
+        tagline="Intelligence in Every Word",
+    )
+
+
 def load_guidelines_from_json(filepath: str) -> BrandGuidelines:
-    """
-    Load brand guidelines from JSON file
-
-    Args:
-        filepath: Path to JSON file containing brand guidelines
-
-    Returns:
-        BrandGuidelines object
-
-    Raises:
-        FileNotFoundError: If the file doesn't exist
-        json.JSONDecodeError: If the file contains invalid JSON
-        TypeError: If required fields are missing
-    """
+    """Load brand guidelines from a JSON file."""
     try:
         with open(filepath) as f:
             data = json.load(f)
         return BrandGuidelines(**data)
     except FileNotFoundError as e:
-        raise FileNotFoundError(f"Brand guidelines file not found: {filepath}") from e
+        raise FileNotFoundError(f"Guidelines file not found: {filepath}") from e
     except json.JSONDecodeError as e:
-        raise json.JSONDecodeError(
-            f"Invalid JSON in brand guidelines file: {e.msg}", e.doc, e.pos
-        ) from e
+        raise json.JSONDecodeError(f"Invalid JSON: {e.msg}", e.doc, e.pos) from e
     except TypeError as e:
-        raise TypeError(f"Missing required fields in brand guidelines: {e}") from e
-
-
-def get_acme_corporation_guidelines() -> BrandGuidelines:
-    """
-    Get default Acme Corporation brand guidelines.
-
-    These guidelines match the standards defined in the SKILL.md reference.
-    Users should customize these for their own organization.
-
-    Returns:
-        BrandGuidelines object with Acme Corporation standards
-    """
-    return BrandGuidelines(
-        brand_name="Acme Corporation",
-        primary_colors=["#0066CC", "#003366", "#FFFFFF"],  # Acme Blue, Acme Navy, White
-        secondary_colors=[
-            "#28A745",
-            "#FFC107",
-            "#DC3545",
-            "#6C757D",
-            "#F8F9FA",
-        ],  # Success Green, Warning Amber, Error Red, Neutral Gray, Light Gray
-        fonts=["Segoe UI", "system-ui", "-apple-system", "sans-serif"],
-        tone_keywords=[
-            "innovation",
-            "excellence",
-            "professional",
-            "solutions",
-            "trusted",
-            "reliable",
-        ],
-        prohibited_words=["cheap", "outdated", "inferior", "unprofessional", "sloppy"],
-        tagline="Innovation Through Excellence",
-    )
+        raise TypeError(f"Missing required fields: {e}") from e
 
 
 def main():
-    """Example usage demonstrating brand validation"""
-    # Load Acme Corporation brand guidelines
-    # Users should customize this for their own organization
-    guidelines = get_acme_corporation_guidelines()
+    """Example usage: validate a React component snippet against Polyglan guidelines."""
+    guidelines = get_polyglan_guidelines()
 
-    # Example content to validate (intentionally contains violations for demonstration)
     test_content = """
-    Welcome to acme corporation!
+    Welcome to polyglan!
 
-    We are a cheap solution provider with outdated technology.
+    const token = localStorage.setItem('token', jwt);
 
-    Our innovation and excellence in professional solutions are trusted by many.
+    font-family: 'Inter', sans-serif;
+    background-color: #0066CC;
+    border-radius: 4px;
+    color: #000000;
 
-    Contact us at: font-family: 'Comic Sans MS'
-    Color scheme: #FF0000
-    Background: rgb(255, 0, 0)
+    Our cheap and generic solution for education.
     """
 
-    # Validate
     validator = BrandValidator(guidelines)
     result = validator.validate(test_content)
 
-    # Print results
     print("=" * 60)
-    print("BRAND VALIDATION REPORT")
+    print("POLYGLAN BRAND VALIDATION REPORT")
     print("=" * 60)
-    print(f"\nOverall Status: {'✓ PASSED' if result.passed else '✗ FAILED'}")
-    print(f"Compliance Score: {result.score}/100")
+    print(f"\nStatus:  {'✓ PASSED' if result.passed else '✗ FAILED'}")
+    print(f"Score:   {result.score}/100")
 
     if result.violations:
         print(f"\n❌ VIOLATIONS ({len(result.violations)}):")
-        for i, violation in enumerate(result.violations, 1):
-            print(f"  {i}. {violation}")
+        for i, v in enumerate(result.violations, 1):
+            print(f"  {i}. {v}")
 
     if result.warnings:
         print(f"\n⚠️  WARNINGS ({len(result.warnings)}):")
-        for i, warning in enumerate(result.warnings, 1):
-            print(f"  {i}. {warning}")
+        for i, w in enumerate(result.warnings, 1):
+            print(f"  {i}. {w}")
 
     if result.suggestions:
         print("\n💡 SUGGESTIONS:")
-        for i, suggestion in enumerate(result.suggestions, 1):
-            print(f"  {i}. {suggestion}")
+        for i, s in enumerate(result.suggestions, 1):
+            print(f"  {i}. {s}")
 
     print("\n" + "=" * 60)
-
-    # Return JSON for programmatic use
     return asdict(result)
 
 

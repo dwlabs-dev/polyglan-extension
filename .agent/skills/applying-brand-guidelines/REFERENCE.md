@@ -1,54 +1,110 @@
-# Brand Guidelines Reference
+# Polyglan Brand Guidelines Reference
 
 ## Quick Reference Card
 
 ### Must-Have Elements
-✅ Company logo on first page/slide
-✅ Correct brand colors (no variations)
-✅ Approved fonts only
-✅ Consistent formatting throughout
-✅ Professional tone of voice
+✅ Mustard Yellow `#F4A900` for primary CTAs and active states
+✅ Chocolate Brown `#4A403A` for all body text and borders
+✅ Cream `#FAF5EE` or Warm Beige `#D4B896` for backgrounds
+✅ FreeSans or Nunito as display font — never Inter or Roboto
+✅ Pill-shaped buttons (border-radius: 9999px)
+✅ Polyglan logo on first page/screen
 
 ### Never Use
-❌ Competitor logos or references
-❌ Unapproved colors or gradients
-❌ Decorative or script fonts
-❌ Pixelated or stretched logos
-❌ Informal language or slang
+❌ Generic blue corporate palettes
+❌ Purple gradients on white
+❌ Pure black `#000000` as background — use Dark Brown `#2C2420`
+❌ Pure white `#FFFFFF` as standalone background — use Cream `#FAF5EE`
+❌ Inter, Roboto, Arial as display fonts
+❌ Bright red for errors — use Terracotta `#C1666B`
+❌ More than 4 colors in a single chart or diagram
+❌ Drop shadows or 3D effects
+
+---
 
 ## Color Codes Reference
 
-### For Digital (RGB/Hex)
-| Color Name | Hex Code | RGB | Usage |
-|------------|----------|-----|-------|
-| Acme Blue | #0066CC | 0, 102, 204 | Primary headers, CTAs |
-| Acme Navy | #003366 | 0, 51, 102 | Body text, secondary |
-| Success Green | #28A745 | 40, 167, 69 | Positive values |
-| Warning Amber | #FFC107 | 255, 193, 7 | Warnings, attention |
-| Error Red | #DC3545 | 220, 53, 69 | Errors, negative |
-| Neutral Gray | #6C757D | 108, 117, 125 | Muted text |
-| Light Gray | #F8F9FA | 248, 249, 250 | Backgrounds |
+### Full Palette (Digital — RGB/Hex)
+
+| Color Name       | Hex Code  | RGB              | Usage                                      |
+|------------------|-----------|------------------|--------------------------------------------|
+| Mustard Yellow   | `#F4A900` | 244, 169, 0      | Primary CTA, active states, brand identity |
+| Muted Gold       | `#C98F00` | 201, 143, 0      | Hover state for Mustard Yellow             |
+| Terracotta       | `#C1666B` | 193, 102, 107    | Secondary accent, destructive actions      |
+| Dark Terracotta  | `#A0484D` | 160, 72, 77      | Hover state for Terracotta                 |
+| Warm Beige       | `#D4B896` | 212, 184, 150    | Main backgrounds, borders                  |
+| Light Beige      | `#EDE0D0` | 237, 224, 208    | Hover surfaces, alternating rows           |
+| Cream            | `#FAF5EE` | 250, 245, 238    | Page background, card surface              |
+| Chocolate Brown  | `#4A403A` | 74, 64, 58       | Text, borders, UI anchors                  |
+| Dark Brown       | `#2C2420` | 44, 36, 32       | Deep backgrounds, overlays, dark mode      |
+| Muted Brown      | `#8C7B72` | 140, 123, 114    | Secondary text, muted labels               |
 
 ### For Print (CMYK)
-| Color Name | CMYK | Pantone |
-|------------|------|---------|
-| Acme Blue | 100, 50, 0, 20 | 2935 C |
-| Acme Navy | 100, 50, 0, 60 | 2965 C |
+
+| Color Name      | CMYK              | Pantone   |
+|-----------------|-------------------|-----------|
+| Mustard Yellow  | 0, 31, 100, 4     | 7549 C    |
+| Terracotta      | 0, 47, 44, 24     | 7522 C    |
+| Chocolate Brown | 0, 14, 22, 71     | 7533 C    |
+| Warm Beige      | 0, 13, 29, 17     | 9183 C    |
+
+---
+
+## Typography Reference
+
+| Role         | Font      | Size  | Weight | Color            |
+|--------------|-----------|-------|--------|------------------|
+| Display / H1 | FreeSans  | 28pt  | Bold   | `#4A403A`        |
+| H2           | FreeSans  | 22pt  | Bold   | `#4A403A`        |
+| H3           | FreeSans  | 16pt  | Bold   | `#4A403A`        |
+| Body         | FreeSans  | 14pt  | Regular| `#4A403A`        |
+| Caption      | FreeSans  | 11pt  | Regular| `#C1666B`        |
+| Badge/Tag    | FreeSans  | 10pt  | Bold   | `#2C2420` on `#F4A900` |
+
+---
+
+## Component Patterns
+
+### Buttons
+
+```
+Primary:    bg #F4A900  |  text #2C2420  |  hover bg #C98F00  |  radius 9999px
+Secondary:  bg #FFFFFF  |  text #4A403A  |  border #4A403A    |  radius 9999px
+Destructive:bg #C1666B  |  text #FFFFFF  |  hover bg #A0484D  |  radius 9999px
+Ghost:      bg transparent | text #4A403A | border #D4B896   |  radius 9999px
+```
+
+### Cards
+```
+background:    #FFFFFF or #FAF5EE
+border:        1px solid #D4B896
+border-radius: 16px
+padding:       16px
+```
+
+### Avatars
+```
+background: #4A403A
+text:       #FAF5EE
+shape:      circle
+font:       FreeSans Bold
+```
+
+### Status Badges
+```
+Active:   bg #F4A900  text #2C2420
+Success:  bg #EDE0D0  text #4A403A
+Error:    bg #C1666B  text #FFFFFF
+Neutral:  bg #D4B896  text #4A403A
+```
+
+---
 
 ## Document Templates
 
-### Email Signature
-```
-[Name]
-[Title]
-Acme Corporation | Innovation Through Excellence
-[Phone] | [Email]
-www.acmecorp.example
-```
-
 ### Slide Footer
 ```
-© 2025 Acme Corporation | Confidential | Page [X]
+© 2025 Polyglan | Confidential | Page [X]
 ```
 
 ### Report Header
@@ -56,17 +112,32 @@ www.acmecorp.example
 [Logo]     [Document Title]     Page [X] of [Y]
 ```
 
+### Email Signature
+```
+[Name]
+[Title]
+Polyglan | Intelligence in Every Word
+[Phone] | [Email]
+```
+
+---
+
 ## Accessibility Standards
 
 ### Color Contrast
-- Text on white background: Use Acme Navy (#003366)
-- Text on blue background: Use white (#FFFFFF)
+- Chocolate Brown `#4A403A` on Cream `#FAF5EE`: ratio 7.2:1 ✅
+- Dark Brown `#2C2420` on Warm Beige `#D4B896`: ratio 5.8:1 ✅
+- Cream `#FAF5EE` on Chocolate Brown `#4A403A`: ratio 7.2:1 ✅
+- Dark Brown `#2C2420` on Mustard Yellow `#F4A900`: ratio 6.1:1 ✅
 - Minimum contrast ratio: 4.5:1 for body text
-- Minimum contrast ratio: 3:1 for large text
+- Minimum contrast ratio: 3:1 for large text (18pt+)
 
 ### Font Sizes
 - Minimum body text: 11pt (print), 14px (digital)
-- Minimum caption text: 9pt (print), 12px (digital)
+- Minimum caption: 9pt (print), 12px (digital)
+- Minimum touch target: 44px height for interactive elements
+
+---
 
 ## File Naming Conventions
 
@@ -76,62 +147,51 @@ YYYY-MM-DD_DocumentType_Version_Status.ext
 ```
 
 ### Examples
-- `2025-01-15_QuarterlyReport_v2_FINAL.pptx`
-- `2025-01-15_BudgetAnalysis_v1_DRAFT.xlsx`
-- `2025-01-15_Proposal_v3_APPROVED.pdf`
+- `2025-03-20_QuarterlyReport_v2_FINAL.pptx`
+- `2025-03-20_SessionAnalysis_v1_DRAFT.xlsx`
+- `2025-03-20_TeacherGuide_v3_APPROVED.pdf`
+
+---
 
 ## Common Mistakes to Avoid
 
-1. **Wrong Blue**: Using generic blue instead of Acme Blue #0066CC
-2. **Stretched Logo**: Always maintain aspect ratio
-3. **Too Many Colors**: Stick to the approved palette
-4. **Inconsistent Fonts**: Don't mix font families
-5. **Missing Logo**: Always include on first page
-6. **Wrong Date Format**: Use "Month DD, YYYY"
-7. **Decimal Places**: Be consistent (currency: 2, percentage: 1)
+1. **Wrong yellow**: Using generic amber or orange instead of Mustard Yellow `#F4A900`
+2. **Wrong background**: Using pure white `#FFFFFF` instead of Cream `#FAF5EE`
+3. **Wrong error color**: Using bright red instead of Terracotta `#C1666B`
+4. **Wrong font**: Using Inter, Roboto, or system-ui as display font
+5. **Sharp corners**: Buttons must always be pill-shaped (radius 9999px)
+6. **Too many colors**: Max 3 brand colors per screen/slide
+7. **Low contrast text**: Never use Warm Beige text on Cream background
 
-## Department-Specific Guidelines
+---
 
-### Finance
-- Always right-align numbers in tables
-- Use parentheses for negative values: ($1,234)
-- Include data source citations
+## Context-Specific Guidelines
 
-### Marketing
-- Can use full secondary color palette
-- May include approved imagery
-- Follow social media specific guidelines when applicable
+### Professor Interface
+- Active session: Mustard Yellow pulse indicator
+- Pause state: Chocolate Brown, reduced opacity
+- Student list: Cream cards with Chocolate Brown text and avatar
+- Timer: Large, Chocolate Brown digits on Cream background
 
-### Legal
-- Use numbered sections (1.0, 1.1, 1.2)
-- Include document control information
-- Apply "Confidential" watermark when needed
+### Student Interface
+- Recording active: Terracotta pulse ring
+- Recording paused: Muted Brown, no animation
+- Completed: Warm Beige surface, Chocolate Brown checkmark
+- Feedback positive: Mustard Yellow accent
 
-## International Considerations
+### Session Modes
+- **História** (1 student): Mustard Yellow badge
+- **Debate** (2+ students): Terracotta badge
 
-### Date Formats by Region
-- **US**: Month DD, YYYY (January 15, 2025)
-- **UK**: DD Month YYYY (15 January 2025)
-- **ISO**: YYYY-MM-DD (2025-01-15)
-
-### Currency Display
-- **USD**: $1,234.56
-- **EUR**: €1.234,56
-- **GBP**: £1,234.56
+---
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 2.0 | Jan 2025 | Added digital color codes |
-| 1.5 | Oct 2024 | Updated font guidelines |
-| 1.0 | Jan 2024 | Initial brand guidelines |
+| Version | Date     | Changes                          |
+|---------|----------|----------------------------------|
+| 1.0     | Mar 2025 | Initial Polyglan brand guidelines|
 
 ## Contact for Questions
 
-**Brand Team**
-Email: brand@acmecorp.example
-Slack: #brand-guidelines
-
-**For Exceptions**
-Submit request to brand team with business justification
+**Design lead**: brand@polyglan.com
+**Slack**: #design-system
