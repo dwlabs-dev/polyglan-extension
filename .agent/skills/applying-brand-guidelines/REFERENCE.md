@@ -4,7 +4,7 @@
 
 ### Must-Have Elements
 ✅ Mustard Yellow `#F4A900` for primary CTAs and active states
-✅ Chocolate Brown `#4A403A` for all body text and borders
+✅ Chocolate Brown `#000000` for all body text and borders
 ✅ Cream `#FAF5EE` or Warm Beige `#D4B896` for backgrounds
 ✅ FreeSans or Nunito as display font — never Inter or Roboto
 ✅ Pill-shaped buttons (border-radius: 9999px)
@@ -35,7 +35,7 @@
 | Warm Beige       | `#D4B896` | 212, 184, 150    | Main backgrounds, borders                  |
 | Light Beige      | `#EDE0D0` | 237, 224, 208    | Hover surfaces, alternating rows           |
 | Cream            | `#FAF5EE` | 250, 245, 238    | Page background, card surface              |
-| Chocolate Brown  | `#4A403A` | 74, 64, 58       | Text, borders, UI anchors                  |
+| Chocolate Brown  | `#000000` | 74, 64, 58       | Text, borders, UI anchors                  |
 | Dark Brown       | `#2C2420` | 44, 36, 32       | Deep backgrounds, overlays, dark mode      |
 | Muted Brown      | `#8C7B72` | 140, 123, 114    | Secondary text, muted labels               |
 
@@ -54,10 +54,10 @@
 
 | Role         | Font      | Size  | Weight | Color            |
 |--------------|-----------|-------|--------|------------------|
-| Display / H1 | FreeSans  | 28pt  | Bold   | `#4A403A`        |
-| H2           | FreeSans  | 22pt  | Bold   | `#4A403A`        |
-| H3           | FreeSans  | 16pt  | Bold   | `#4A403A`        |
-| Body         | FreeSans  | 14pt  | Regular| `#4A403A`        |
+| Display / H1 | FreeSans  | 28pt  | Bold   | `#000000`        |
+| H2           | FreeSans  | 22pt  | Bold   | `#000000`        |
+| H3           | FreeSans  | 16pt  | Bold   | `#000000`        |
+| Body         | FreeSans  | 14pt  | Regular| `#000000`        |
 | Caption      | FreeSans  | 11pt  | Regular| `#C1666B`        |
 | Badge/Tag    | FreeSans  | 10pt  | Bold   | `#2C2420` on `#F4A900` |
 
@@ -69,9 +69,9 @@
 
 ```
 Primary:    bg #F4A900  |  text #2C2420  |  hover bg #C98F00  |  radius 9999px
-Secondary:  bg #FFFFFF  |  text #4A403A  |  border #4A403A    |  radius 9999px
+Secondary:  bg #FFFFFF  |  text #000000  |  border #000000    |  radius 9999px
 Destructive:bg #C1666B  |  text #FFFFFF  |  hover bg #A0484D  |  radius 9999px
-Ghost:      bg transparent | text #4A403A | border #D4B896   |  radius 9999px
+Ghost:      bg transparent | text #000000 | border #D4B896   |  radius 9999px
 ```
 
 ### Cards
@@ -84,7 +84,7 @@ padding:       16px
 
 ### Avatars
 ```
-background: #4A403A
+background: #000000
 text:       #FAF5EE
 shape:      circle
 font:       FreeSans Bold
@@ -93,9 +93,9 @@ font:       FreeSans Bold
 ### Status Badges
 ```
 Active:   bg #F4A900  text #2C2420
-Success:  bg #EDE0D0  text #4A403A
+Success:  bg #EDE0D0  text #000000
 Error:    bg #C1666B  text #FFFFFF
-Neutral:  bg #D4B896  text #4A403A
+Neutral:  bg #D4B896  text #000000
 ```
 
 ---
@@ -125,9 +125,9 @@ Polyglan | Intelligence in Every Word
 ## Accessibility Standards
 
 ### Color Contrast
-- Chocolate Brown `#4A403A` on Cream `#FAF5EE`: ratio 7.2:1 ✅
+- Chocolate Brown `#000000` on Cream `#FAF5EE`: ratio 7.2:1 ✅
 - Dark Brown `#2C2420` on Warm Beige `#D4B896`: ratio 5.8:1 ✅
-- Cream `#FAF5EE` on Chocolate Brown `#4A403A`: ratio 7.2:1 ✅
+- Cream `#FAF5EE` on Chocolate Brown `#000000`: ratio 7.2:1 ✅
 - Dark Brown `#2C2420` on Mustard Yellow `#F4A900`: ratio 6.1:1 ✅
 - Minimum contrast ratio: 4.5:1 for body text
 - Minimum contrast ratio: 3:1 for large text (18pt+)

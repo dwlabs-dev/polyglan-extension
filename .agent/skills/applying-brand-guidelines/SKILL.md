@@ -22,7 +22,7 @@ This skill ensures all generated documents, interfaces, and components adhere to
 - **Mustard Yellow**: `#F4A900` (RGB: 244, 169, 0) — Primary CTA buttons, active states, brand identity
 - **Terracotta**: `#C1666B` (RGB: 193, 102, 107) — Secondary accents, destructive actions, alert states
 - **Warm Beige**: `#D4B896` (RGB: 212, 184, 150) — Main backgrounds, soft surfaces
-- **Chocolate Brown**: `#4A403A` (RGB: 74, 64, 58) — High-contrast text, borders, UI anchors
+- **Chocolate Brown**: `#000000` (RGB: 74, 64, 58) — High-contrast text, borders, UI anchors
 
 **Extended Palette**:
 - **Dark Brown**: `#2C2420` — Deep backgrounds, overlays
@@ -64,18 +64,18 @@ This skill ensures all generated documents, interfaces, and components adhere to
 - Page background: `#FAF5EE` (Cream) or `#D4B896` (Warm Beige)
 - Card/surface background: `#FFFFFF` or `#EDE0D0`
 - Primary button: `#F4A900` background, `#2C2420` text, border-radius full (pill)
-- Secondary button: `#FFFFFF` background, `#4A403A` border and text
+- Secondary button: `#FFFFFF` background, `#000000` border and text
 - Destructive button: `#C1666B` background, `#FFFFFF` text
 - Active/selected state: `#F4A900` border, `#FFFFFF` background
-- Text primary: `#4A403A`
+- Text primary: `#000000`
 - Text secondary: `#8C7B72`
 - Border default: `#D4B896`
-- Border active: `#4A403A`
+- Border active: `#000000`
 
 **Component patterns**:
 - Buttons: `border-radius: 9999px` (pill shape), font-weight bold, uppercase tracking
 - Cards: `border-radius: 16px`, `border: 1px solid #D4B896`
-- Avatars: circular, background `#4A403A`, text `#FAF5EE`
+- Avatars: circular, background `#000000`, text `#FAF5EE`
 - Badges/tags: pill shape, `#F4A900` background, `#2C2420` text
 - Inputs: `border-radius: 12px`, border `#D4B896`, focus border `#F4A900`
 - Dividers: `1px solid #D4B896`
@@ -113,7 +113,7 @@ This skill ensures all generated documents, interfaces, and components adhere to
 **Chart Defaults**:
 - Primary series: Mustard Yellow `#F4A900`
 - Secondary series: Terracotta `#C1666B`
-- Tertiary series: Chocolate Brown `#4A403A`
+- Tertiary series: Chocolate Brown `#000000`
 - Gridlines: Warm Beige, 0.5pt
 - No 3D effects or gradients
 
@@ -128,8 +128,8 @@ This skill ensures all generated documents, interfaces, and components adhere to
 
 **Section Formatting**:
 - Main headings: Mustard Yellow `#F4A900`, 18pt, bold
-- Subheadings: Chocolate Brown `#4A403A`, 14pt, bold
-- Body text: Chocolate Brown `#4A403A`, 11pt, regular
+- Subheadings: Chocolate Brown `#000000`, 14pt, bold
+- Body text: Chocolate Brown `#000000`, 11pt, regular
 - Captions: Terracotta `#C1666B`, 9pt, italic
 
 ## Content Guidelines
@@ -159,7 +159,7 @@ Before finalizing any output:
 3. Primary CTA uses Mustard Yellow with Chocolate Brown text
 4. Destructive actions use Terracotta, not red
 5. Logo present on first page/slide/screen
-6. Dark mode surfaces use `#2C2420` or `#4A403A`, not pure black
+6. Dark mode surfaces use `#2C2420` or `#000000`, not pure black
 7. No pure white `#FFFFFF` as standalone background — use Cream `#FAF5EE`
 
 ## Scripts

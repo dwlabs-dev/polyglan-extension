@@ -213,7 +213,7 @@ class BrandValidator:
         if any("color" in v.lower() or "color" in w.lower() for v in violations for w in warnings):
             suggestions.append(
                 "Primary palette: Mustard Yellow #F4A900, Terracotta #C1666B, "
-                "Warm Beige #D4B896, Chocolate Brown #4A403A — see REFERENCE.md"
+                "Warm Beige #D4B896, Chocolate Brown #000000 — see REFERENCE.md"
             )
 
         if any("font" in v.lower() for v in violations):
@@ -276,7 +276,7 @@ def get_polyglan_guidelines() -> BrandGuidelines:
     """
     return BrandGuidelines(
         brand_name="Polyglan",
-        primary_colors=["#F4A900", "#C1666B", "#D4B896", "#4A403A"],
+        primary_colors=["#F4A900", "#C1666B", "#D4B896", "#000000"],
         extended_colors=["#2C2420", "#EDE0D0", "#FAF5EE", "#C98F00", "#A0484D", "#8C7B72"],
         fonts=["FreeSans", "Nunito", "DM Sans", "sans-serif"],
         tone_keywords=[

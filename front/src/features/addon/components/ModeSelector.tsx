@@ -22,7 +22,7 @@ export default function ModeSelector() {
   const selectedParticipants = participants.filter((u) => selectedIds.includes(u.conferenceRecordUserId));
 
   return (
-    <div className="flex flex-col h-screen bg-[#FCFCF4] text-black font-sans antialiased overflow-hidden dark:bg-[#0F172A] dark:text-[#F8FAFC]">
+    <div className="flex flex-col h-screen bg-polyglan-cream text-polyglan-brown font-sans antialiased overflow-hidden dark:bg-polyglan-brown-dark dark:text-polyglan-cream">
       {step === 'selection' ? (
         <ParticipantSelectionPage
           participants={participants}

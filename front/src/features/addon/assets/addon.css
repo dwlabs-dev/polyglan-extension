@@ -1,15 +1,23 @@
 /* addon.css - Minimalist sidepanel adjustments */
 :root {
-  --bg-primary: #FCFCF4;
-  --bg-secondary: #F4F4EC;
+  --bg-primary: #FAF5EE;
+  /* Polyglan Cream */
+  --bg-secondary: #D4B896;
+  /* Polyglan Warm Beige */
   --text-black: #000000;
-  --text-gray: #999999;
+  /* Polyglan Chocolate Brown */
+  --text-gray: #8C7B72;
+  /* Polyglan Muted */
+  --primary: #F4A900;
+  /* Mustard Yellow */
+  --secondary: #C1666B;
+  /* Terracotta */
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Nunito', 'DM Sans', sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-black);
   height: 100vh;
@@ -38,6 +46,7 @@ body {
 }
 
 /* Ensure no conflicts with header/footer */
-header, footer {
-    width: 100%;
+header,
+footer {
+  width: 100%;
 }

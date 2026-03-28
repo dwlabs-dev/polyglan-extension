@@ -15,7 +15,7 @@ class BrandFormatter:
             "mustard_yellow": {"hex": "#F4A900", "rgb": (244, 169, 0)},
             "terracotta":     {"hex": "#C1666B", "rgb": (193, 102, 107)},
             "warm_beige":     {"hex": "#D4B896", "rgb": (212, 184, 150)},
-            "chocolate_brown":{"hex": "#4A403A", "rgb": (74, 64, 58)},
+            "chocolate_brown":{"hex": "#000000", "rgb": (74, 64, 58)},
         },
         "extended": {
             "dark_brown":       {"hex": "#2C2420", "rgb": (44, 36, 32)},

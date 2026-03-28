@@ -64,31 +64,35 @@ function App() {
   };
 
   return (
-    <div className="app-container side-panel">
-      <div className="glass-panel">
-        <header>
-          <img src="/logo.png" alt="Polyglan Logo" className="logo" />
-          <h1>Polyglan</h1>
+    <div className="flex flex-col h-screen bg-polyglan-cream dark:bg-polyglan-brown-dark text-polyglan-brown dark:text-polyglan-cream px-4 py-6 font-sans antialiased">
+      <div className="flex flex-col h-full bg-white dark:bg-polyglan-brown rounded-2xl shadow-sm border border-polyglan-beige dark:border-polyglan-brown-dark overflow-hidden p-6 transition-colors">
+        <header className="flex flex-col items-center mb-8">
+          <img src="/logo.png" alt="Polyglan Logo" className="w-16 h-16 mb-4" />
+          <h1 className="text-xl font-display font-black uppercase tracking-tight">Polyglan</h1>
         </header>
 
-        <main>
-          <p className="description">
+        <main className="flex-grow flex flex-col items-center justify-center text-center">
+          <p className="text-sm font-medium mb-8 text-polyglan-muted dark:text-polyglan-beige-light leading-relaxed">
             {isDebateActive
               ? 'O modo debate está ativo para todos os participantes.'
               : 'Inicie uma atividade sincronizada para todos na reunião.'}
           </p>
 
           <button
-            className={`debate-button active`}
+            className="w-full py-4 rounded-full bg-polyglan-primary text-polyglan-brown-dark font-display font-bold text-[11px] uppercase tracking-[0.15em] transition-transform hover:bg-polyglan-primary/90 active:scale-[0.98] cursor-pointer"
             onClick={handleStartDebate}
           >
             {'Iniciar Debate'}
           </button>
 
-          {status && <div className="status-message">{status}</div>}
+          {status && (
+            <div className="mt-6 text-xs font-bold uppercase tracking-widest text-polyglan-secondary animate-pulse">
+              {status}
+            </div>
+          )}
         </main>
 
-        <footer>
+        <footer className="mt-8 text-center text-[9px] uppercase tracking-widest font-bold text-polyglan-muted dark:text-polyglan-beige-light opacity-50">
           <span>v1.0.0 (Meet SDK)</span>
         </footer>
       </div>
