@@ -36,3 +36,4 @@ Thumbs.db
 package-lock.json
 
 api/infra/google/credentials.json
+student-extension/infra/google/credentials.json

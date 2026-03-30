@@ -1,14 +1,17 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { createServer } from 'http';
 
 import meetRouter from '@routes/meet.js';
 import authRouter from '@routes/auth.js';
 import healthRouter from '@routes/health.js';
 import sessionRouter from '@routes/session.js';
 import participantsRouter from '@routes/participants.js';
+import { initWebSocketServer } from './lib/websocket.js';
 
 const app = express();
+const server = createServer(app);
 const PORT = process.env.PORT || 3001;
 
 // Middleware
@@ -22,6 +25,10 @@ app.use(sessionRouter);
 app.use(meetRouter);
 app.use(participantsRouter);
 
-app.listen(PORT, () => {
+// Initialize WebSocket server
+initWebSocketServer(server);
+
+server.listen(PORT, () => {
   console.log(`[API] Polyglan API running on http://localhost:${PORT}`);
 });
+

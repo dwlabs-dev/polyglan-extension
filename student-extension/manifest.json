@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Polyglan Student",
+  "version": "0.1.0",
+  "description": "Polyglan speech capture for students",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "identity"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*",
+    "https://*.trycloudflare.com/*",
+    "https://accounts.google.com/*",
+    "https://bhkdajkdnaamcpodmjmpadcaldhfjlpe.chromiumapp.org",
+    "https://booth-terms-detective-las.trycloudflare.com"
+  ],
+  "oauth2": {
+    "client_id": "1082613234514-cgphl4tlimavpnso5khdp9fgo0b5bekc.apps.googleusercontent.com",
+    "scopes": [
+      "profile",
+      "email"
+    ]
+  },
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://meet.google.com/*"
+      ],
+      "js": [
+        "content/content-script.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Polyglan Student"
+  }
+}

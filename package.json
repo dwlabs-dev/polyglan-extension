@@ -3,10 +3,11 @@
   "private": true,
   "version": "2.0.0",
   "scripts": {
-    "dev": "concurrently \"npm run dev:front\" \"npm run dev:api\"",
+    "dev": "concurrently \"npm run dev:front\" \"npm run dev:api\" \"npm run dev:student-extension\"",
     "dev:front": "cd front && npm run dev",
     "dev:api": "cd api && npm run dev",
-    "install:all": "cd api && npm install && cd ../front && npm install"
+    "dev:student-extension": "cd student-extension && npm run dev",
+    "install:all": "cd api && npm install && cd ../front && npm install && cd ../student-extension && npm install"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

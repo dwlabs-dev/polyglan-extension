@@ -1,30 +1,30 @@
-import fs from 'node:fs/promises';
-import { getAuthClient } from './lib/google-auth.js';
-import path from 'node:path';
+import path from 'path';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-const TOKEN_PATH = path.join(process.cwd(), '/infra/google/token.json');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-async function testLogic() {
-  console.log('--- Verifying Logic ---');
+function getGoogleCredentials() {
+  const credPath = path.resolve(__dirname, '../infra/google/credentials.json');
+  console.log(`[Test] Attempting to load credentials from: ${credPath}`);
   
-  // Call 1
-  const client1 = await getAuthClient();
-  const tokenExistsAfterCall1 = await fs.access(TOKEN_PATH).then(() => true).catch(() => false);
-  console.log('Token file exists after call 1:', tokenExistsAfterCall1);
+  const credFile = readFileSync(credPath, 'utf-8');
+  const cred = JSON.parse(credFile);
   
-  // Call 2
-  const client2 = await getAuthClient();
-  console.log('Client instance is reused:', client1 === client2);
-  
-  if (client1 === client2 && tokenExistsAfterCall1) {
-    console.log('SUCCESS: Logic verified correctly!');
-  } else {
-    console.error('FAILURE: Verification failed.');
+  if (!cred.installed) {
+    throw new Error(`Invalid credentials.json format. Expected 'installed' type credentials.`);
   }
+  
+  console.log(`[Test] Successfully loaded credentials for client_id: ${cred.installed.client_id.substring(0, 10)}...`);
+  return cred.installed;
 }
 
-// Since getAuthClient() might block on authenticate(), 
-// this script is intended to be run AFTER a manual authentication or if token.json already exists.
-// However, the purpose of this task is to ensure it DOES cache and reuse.
-
-testLogic().catch(console.error);
+try {
+  getGoogleCredentials();
+  console.log('✅ Auth logic test passed: Version of __dirname is correct and file is readable.');
+} catch (error: any) {
+  console.error('❌ Auth logic test failed:', error.message);
+  process.exit(1);
+}

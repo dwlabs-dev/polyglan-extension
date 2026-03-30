@@ -10,11 +10,13 @@
   "dependencies": {
     "@google-apps/meet": "^0.7.1",
     "@google-cloud/local-auth": "^3.0.1",
+    "@types/ws": "^8.18.1",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "google-auth-library": "^10.6.2",
-    "googleapis": "^171.4.0"
+    "googleapis": "^171.4.0",
+    "ws": "^8.20.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
