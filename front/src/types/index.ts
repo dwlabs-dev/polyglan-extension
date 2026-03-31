@@ -1,4 +1,4 @@
-export type Mode = 'debate' | 'history';
+export type Mode = 'debate' | 'history' | 'Debate' | 'History';
 
 export interface Participant {
   name: string;

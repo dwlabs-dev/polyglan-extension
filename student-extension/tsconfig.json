@@ -7,7 +7,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "types": ["chrome", "vite/client"],
+    "types": ["chrome", "vite/client", "node"],
 
     /* Bundler mode */
     "moduleResolution": "bundler",

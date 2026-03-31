@@ -24,10 +24,10 @@ export default defineConfig({
     },
     define: {
         'import.meta.env.VITE_API_URL': JSON.stringify(
-            process.env.VITE_API_URL || 'https://booth-terms-detective-las.trycloudflare.com'
+            process.env.VITE_API_URL || 'https://tubes-prix-balloon-configuration.trycloudflare.com'
         ),
         'import.meta.env.VITE_WS_URL': JSON.stringify(
-            process.env.VITE_WS_URL || 'https://booth-terms-detective-las.trycloudflare.com'
+            process.env.VITE_WS_URL || 'wss://tubes-prix-balloon-configuration.trycloudflare.com/ws'
         ),
     },
 });

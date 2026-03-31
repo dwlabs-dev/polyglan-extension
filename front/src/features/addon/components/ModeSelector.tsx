@@ -9,14 +9,16 @@ export default function ModeSelector() {
     activeMode,
     seconds,
     isPaused,
-    setIsPaused,
+    onlineUserIds,
+    onlineNames,
     toggleParticipant,
     startMode,
     reset,
     formatTime,
     participants,
     loading,
-    error
+    error,
+    togglePause
   } = useModeSelector();
 
   const selectedParticipants = participants.filter((u) => selectedIds.includes(u.conferenceRecordUserId));
@@ -31,14 +33,16 @@ export default function ModeSelector() {
           selectedIds={selectedIds}
           toggleParticipant={toggleParticipant}
           startMode={startMode}
+          onlineUserIds={onlineUserIds}
+          onlineNames={onlineNames}
         />
       ) : (
         <ActiveSessionPage
           activeMode={activeMode || ''}
           seconds={seconds}
           isPaused={isPaused}
-          setIsPaused={setIsPaused}
-          reset={reset}
+          onPauseToggle={togglePause}
+          onFinish={reset}
           formatTime={formatTime}
           selectedParticipants={selectedParticipants}
         />

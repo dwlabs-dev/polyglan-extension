@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Participant } from '../../../types';
+import { getMeetSession } from '../../../lib/meet';
+import { socketService } from '../../../services/socket.service';
+import { useParticipantPresence } from '../../professor/hooks/useParticipantPresence';
 import { getParticipants } from '../../../services/participants.service';
 import { startSession } from '../../../services/session.service';
 import { useAuth } from '../../../hooks/useAuth';
-import type { Mode } from '../../../types';
+import type { Participant, Mode } from '../../../types';
 
 export function useModeSelector() {
   const { getAuthHeader } = useAuth();
@@ -12,8 +14,10 @@ export function useModeSelector() {
   const [activeMode, setActiveMode] = useState<string | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [sessionId, setSessionId] = useState<string>('default-session');
 
-  // API Data
+  // Presence tracking
+  const { onlineUserIds, onlineNames } = useParticipantPresence(sessionId);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +42,45 @@ export function useModeSelector() {
     };
 
     fetchParticipants();
+  }, [getAuthHeader]);
+
+  // Connect to WebSocket and sync meeting code
+  useEffect(() => {
+    const initSocket = async () => {
+      let meetingCode = 'default-session';
+      try {
+        const session = await getMeetSession();
+        const meetingInfo = await session.getMeetingInfo();
+        if (meetingInfo && meetingInfo.meetingCode) {
+          meetingCode = meetingInfo.meetingCode;
+        }
+      } catch (e) {
+        console.warn('[useModeSelector] Failed to get meetingCode from SDK, falling back to URL');
+        const path = window.location.pathname.replace('/', '');
+        if (path.length >= 10 && path.includes('-')) {
+          meetingCode = path;
+        }
+      }
+
+      setSessionId(meetingCode);
+
+      const professorId = 'professor-123';
+      const wsBaseUrl = import.meta.env.VITE_WS_URL || 'wss://tubes-prix-balloon-configuration.trycloudflare.com';
+      let wsUrl = wsBaseUrl.endsWith('/ws') ? wsBaseUrl : `${wsBaseUrl.replace(/\/$/, '')}/ws`;
+      
+      // Enforce WSS if on an HTTPS page (Google Meet requirement)
+      if (window.location.protocol === 'https:' && wsUrl.startsWith('ws://')) {
+        wsUrl = wsUrl.replace('ws://', 'wss://');
+      }
+      
+      socketService.connect(wsUrl, meetingCode, professorId);
+    };
+
+    initSocket();
+
+    return () => {
+      socketService.disconnect();
+    };
   }, []);
 
   // Timer logic
@@ -64,13 +107,27 @@ export function useModeSelector() {
 
     try {
       console.log(`[useModeSelector] Triggering backend session for ${modeName}...`);
-      await startSession(modeName, selectedIds);
+      const response = await startSession(modeName, selectedIds);
+      if (response.status === 'success' && response.type) {
+        socketService.send('START_MODE', { mode: modeName.toUpperCase() });
+      }
     } catch (e) {
       console.error('[useModeSelector] Failed to initialize backend session:', e);
     }
-  }, [selectedIds]);
+  }, [selectedIds, sessionId]);
+
+  const togglePause = useCallback(() => {
+    const nextPaused = !isPaused;
+    setIsPaused(nextPaused);
+    if (nextPaused) {
+      socketService.send('PAUSE_MODE', {});
+    } else {
+      socketService.send('START_MODE', { mode: activeMode?.toUpperCase() || 'DEBATE' });
+    }
+  }, [isPaused, activeMode]);
 
   const reset = useCallback(() => {
+    socketService.send('STOP_MODE', {});
     setStep('selection');
     setSelectedIds([]);
     setActiveMode(null);
@@ -90,7 +147,9 @@ export function useModeSelector() {
     activeMode,
     seconds,
     isPaused,
-    setIsPaused,
+    onlineUserIds,
+    onlineNames,
+    sessionId,
     toggleParticipant,
     startMode,
     reset,
@@ -98,5 +157,6 @@ export function useModeSelector() {
     participants,
     loading,
     error,
+    togglePause
   };
 }

@@ -18,14 +18,41 @@ interface Feedback {
 const FloatingPanel: React.FC = () => {
   const [status, setStatus] = useState<FloatingPanelStatus>('idle');
   const [interimTranscript, setInterimTranscript] = useState('');
-  const [mode, setMode] = useState<SessionMode>(null);
+  const [mode, setMode] = useState<SessionMode | null>(null);
   const [modeSegmentId, setModeSegmentId] = useState<string | null>(null);
   const [feedbackMessages, setFeedbackMessages] = useState<Feedback[]>([]);
   const [studentId, setStudentId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [lang, setLang] = useState<SupportedLang>('pt-BR');
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+
+  // Extract meeting code from URL
+  const getMeetingCode = () => {
+    const path = window.location.pathname.replace('/', '');
+    // Basic validation: 10 chars, typically 3-4-3 format with hyphens
+    if (path.length >= 10 && path.includes('-')) {
+      return path;
+    }
+    return 'default-session';
+  };
+
+  const meetingCode = getMeetingCode();
+
+  // Refs to avoid stale closures in WebSocket/Speech handlers
+  const stateRef = React.useRef({
+    mode,
+    modeSegmentId,
+    lang,
+    sessionId,
+    studentId,
+    userName
+  });
+
+  useEffect(() => {
+    stateRef.current = { mode, modeSegmentId, lang, sessionId, studentId, userName };
+  }, [mode, modeSegmentId, lang, sessionId, studentId, userName]);
 
   // Initialize on mount
   useEffect(() => {
@@ -37,18 +64,19 @@ const FloatingPanel: React.FC = () => {
 
       const token = await authService.getToken();
       if (token) {
-        const sid = await authService.getSessionId();
         const stId = await authService.getStudentId();
         const language = await authService.getLang();
         const email = await authService.getGoogleEmail();
+        const name = await chrome.storage.local.get('userName').then((r: any) => r.userName || '');
 
-        if (sid && stId) {
+        if (stId) {
           setStudentId(stId);
-          setSessionId(sid);
+          setSessionId(meetingCode);
           setLang(language);
           setGoogleEmail(email);
+          setUserName(name);
           setStatus('waiting');
-          socketService.connect(sid, token);
+          socketService.connect(meetingCode, stId, name);
           setupWebSocketHandlers();
         }
       }
@@ -76,11 +104,10 @@ const FloatingPanel: React.FC = () => {
 
       const authCode = authResponse.authCode;
       const extensionId = chrome.runtime.id;
-      debugger;
       const redirectUri = `https://${extensionId}.chromiumapp.org/`;
 
       // Step 2: Exchange authorization code for session token on backend
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://booth-terms-detective-las.trycloudflare.com';
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://tubes-prix-balloon-configuration.trycloudflare.com';
       const authStudentResponse = await fetch(`${apiUrl}/api/auth/student`, {
         method: 'POST',
         headers: {
@@ -101,22 +128,25 @@ const FloatingPanel: React.FC = () => {
       }
 
       // Step 3: Save token and sessionId to chrome storage
-      const { sessionId: newSessionId, token, lang: newLang, email } = authData;
+      const { token, lang: newLang, email } = authData;
 
       await authService.setToken(token);
-      await authService.setSessionId(newSessionId);
       await authService.setGoogleEmail(email);
       await authService.setLang(newLang);
 
       // Step 4: Set local state and transition to waiting
-      setStudentId(newSessionId);
-      setSessionId(newSessionId);
+      const stId = authData.studentId || authData.email || 'unknown-student';
+      await chrome.storage.local.set({ userName: authData.name });
+
+      setStudentId(stId);
+      setSessionId(meetingCode);
       setLang(newLang);
       setGoogleEmail(email);
+      setUserName(authData.name);
       setStatus('waiting');
 
       // Step 5: Connect to WebSocket
-      socketService.connect(newSessionId, token);
+      socketService.connect(meetingCode, stId, authData.name);
       setupWebSocketHandlers();
 
       console.log(`[FloatingPanel] Student authenticated: ${email}`);
@@ -140,18 +170,20 @@ const FloatingPanel: React.FC = () => {
           setMode(payload.mode);
           setModeSegmentId(payload.modeSegmentId);
           setStatus('recording');
-          speechService.start(lang, (text, isFinal) => {
+          speechService.start(stateRef.current.lang, (text, isFinal) => {
             setInterimTranscript(text);
-            if (isFinal && sessionId && studentId) {
+            const { sessionId: currentSid, studentId: currentStid, mode: currentMode, modeSegmentId: currentSegmentId, lang: currentLang } = stateRef.current;
+
+            if (isFinal && currentSid && currentStid) {
               socketService.send({
                 type: 'TRANSCRIPTION_FRAGMENT',
-                sessionId,
+                sessionId: currentSid,
                 payload: {
                   text,
                   isFinal: true,
-                  lang,
-                  mode,
-                  modeSegmentId,
+                  lang: currentLang,
+                  mode: currentMode,
+                  modeSegmentId: currentSegmentId,
                 },
                 timestamp: Date.now(),
               });
@@ -169,19 +201,21 @@ const FloatingPanel: React.FC = () => {
           setMode(null);
           setModeSegmentId(null);
         } else if (command === 'SWITCH_SPEAKER') {
-          if (payload.targetStudentId === studentId) {
-            speechService.start(lang, (text, isFinal) => {
+          if (payload.targetStudentId === stateRef.current.studentId) {
+            speechService.start(stateRef.current.lang, (text, isFinal) => {
               setInterimTranscript(text);
-              if (isFinal && sessionId && studentId) {
+              const { sessionId: currentSid, studentId: currentStid, mode: currentMode, modeSegmentId: currentSegmentId, lang: currentLang } = stateRef.current;
+
+              if (isFinal && currentSid && currentStid) {
                 socketService.send({
                   type: 'TRANSCRIPTION_FRAGMENT',
-                  sessionId,
+                  sessionId: currentSid,
                   payload: {
                     text,
                     isFinal: true,
-                    lang,
-                    mode,
-                    modeSegmentId,
+                    lang: currentLang,
+                    mode: currentMode,
+                    modeSegmentId: currentSegmentId,
                   },
                   timestamp: Date.now(),
                 });
@@ -236,17 +270,6 @@ const FloatingPanel: React.FC = () => {
     color: '#4A403A',
     marginBottom: '12px',
     textAlign: 'center',
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '8px 12px',
-    marginBottom: '8px',
-    border: '1px solid #D4B896',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
   };
 
   const buttonStyle: React.CSSProperties = {
@@ -347,6 +370,7 @@ const FloatingPanel: React.FC = () => {
                 await authService.clear();
                 setStatus('idle');
                 setGoogleEmail(null);
+                setUserName(null);
               }}
             >
               Fazer logout

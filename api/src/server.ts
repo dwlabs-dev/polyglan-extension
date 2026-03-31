@@ -30,5 +30,6 @@ initWebSocketServer(server);
 
 server.listen(PORT, () => {
   console.log(`[API] Polyglan API running on http://localhost:${PORT}`);
+  console.log(`[API] If using TryCloudflare, use: cloudflared tunnel --url http://localhost:${PORT}`);
 });
 
