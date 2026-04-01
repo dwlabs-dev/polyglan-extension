@@ -24,10 +24,10 @@ export default defineConfig({
     },
     define: {
         'import.meta.env.VITE_API_URL': JSON.stringify(
-            process.env.VITE_API_URL || 'https://tubes-prix-balloon-configuration.trycloudflare.com'
+            process.env.VITE_API_URL || 'https://chorus-lifestyle-cashiers-recommends.trycloudflare.com'
         ),
         'import.meta.env.VITE_WS_URL': JSON.stringify(
-            process.env.VITE_WS_URL || 'wss://tubes-prix-balloon-configuration.trycloudflare.com/ws'
+            process.env.VITE_WS_URL || 'wss://chorus-lifestyle-cashiers-recommends.trycloudflare.com/ws'
         ),
     },
 });

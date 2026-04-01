@@ -15,18 +15,31 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Handle Google authentication requests from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log(`[ServiceWorker] Received message: ${request.action}`);
+
   if (request.action === 'authenticateWithGoogle') {
     authenticateWithGoogle()
       .then((result) => {
+        console.log('[ServiceWorker] Authentication successful');
         sendResponse({ success: true, data: result });
       })
       .catch((error) => {
         console.error('[ServiceWorker] Auth error:', error);
-        sendResponse({ success: false, error: error.message });
+        sendResponse({ success: false, error: error.message || 'Authentication failed' });
       });
-    // Return true to indicate will send response asynchronously
-    return true;
+    return true; // Keep channel open for async response
   }
+
+  // Handle ping for connection testing
+  if (request.action === 'ping') {
+    sendResponse({ success: true, pong: true });
+    return false;
+  }
+
+  // Fallback for unhandled messages
+  console.warn(`[ServiceWorker] Unhandled message action: ${request.action}`);
+  sendResponse({ success: false, error: 'Unhandled action' });
+  return false;
 });
 
 /**

@@ -15,6 +15,30 @@ interface Feedback {
   timestamp: number;
 }
 
+// Robust message sender to avoid "Receiving end does not exist" errors
+const safeSendMessage = async (action: string, payload: any = {}): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    try {
+      if (!chrome.runtime?.id) {
+        reject(new Error('Extension context invalidated. Please reload the page.'));
+        return;
+      }
+
+      chrome.runtime.sendMessage({ action, ...payload }, (response) => {
+        const error = chrome.runtime.lastError;
+        if (error) {
+          console.warn(`[safeSendMessage] Error sending ${action}:`, error.message);
+          reject(new Error(error.message));
+          return;
+        }
+        resolve(response);
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
 const FloatingPanel: React.FC = () => {
   const [status, setStatus] = useState<FloatingPanelStatus>('idle');
   const [interimTranscript, setInterimTranscript] = useState('');
@@ -64,19 +88,19 @@ const FloatingPanel: React.FC = () => {
 
       const token = await authService.getToken();
       if (token) {
-        const stId = await authService.getStudentId();
+        const userId = await authService.getGoogleUserId() || await authService.getStudentId();
         const language = await authService.getLang();
         const email = await authService.getGoogleEmail();
         const name = await chrome.storage.local.get('userName').then((r: any) => r.userName || '');
 
-        if (stId) {
-          setStudentId(stId);
+        if (userId) {
+          setStudentId(userId);
           setSessionId(meetingCode);
           setLang(language);
           setGoogleEmail(email);
           setUserName(name);
           setStatus('waiting');
-          socketService.connect(meetingCode, stId, name);
+          socketService.connect(meetingCode, userId, name);
           setupWebSocketHandlers();
         }
       }
@@ -88,26 +112,19 @@ const FloatingPanel: React.FC = () => {
   const handleGoogleLogin = async () => {
     setIsAuthLoading(true);
     try {
-      // Step 1: Get authorization code from service worker
-      const authResponse = await new Promise<{ authCode: string }>((resolve, reject) => {
-        chrome.runtime.sendMessage(
-          { action: 'authenticateWithGoogle' },
-          (response: any) => {
-            if (response.success) {
-              resolve(response.data);
-            } else {
-              reject(new Error(response.error || 'Authentication failed'));
-            }
-          }
-        );
-      });
+      // Step 1: Get authorization code from service worker using safeSendMessage
+      const response = await safeSendMessage('authenticateWithGoogle');
+      
+      if (!response || !response.success) {
+        throw new Error(response?.error || 'Authentication failed');
+      }
 
-      const authCode = authResponse.authCode;
+      const authCode = response.data.authCode;
       const extensionId = chrome.runtime.id;
       const redirectUri = `https://${extensionId}.chromiumapp.org/`;
 
       // Step 2: Exchange authorization code for session token on backend
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://tubes-prix-balloon-configuration.trycloudflare.com';
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://chorus-lifestyle-cashiers-recommends.trycloudflare.com';
       const authStudentResponse = await fetch(`${apiUrl}/api/auth/student`, {
         method: 'POST',
         headers: {
@@ -128,14 +145,16 @@ const FloatingPanel: React.FC = () => {
       }
 
       // Step 3: Save token and sessionId to chrome storage
-      const { token, lang: newLang, email } = authData;
+      const { token, lang: newLang, email, googleUserId } = authData;
 
       await authService.setToken(token);
       await authService.setGoogleEmail(email);
+      await authService.setGoogleUserId(googleUserId);
       await authService.setLang(newLang);
 
       // Step 4: Set local state and transition to waiting
-      const stId = authData.studentId || authData.email || 'unknown-student';
+      const stId = googleUserId || authData.studentId || email || 'unknown-student';
+      await authService.setStudentId(stId);
       await chrome.storage.local.set({ userName: authData.name });
 
       setStudentId(stId);
@@ -149,7 +168,7 @@ const FloatingPanel: React.FC = () => {
       socketService.connect(meetingCode, stId, authData.name);
       setupWebSocketHandlers();
 
-      console.log(`[FloatingPanel] Student authenticated: ${email}`);
+      console.log(`[FloatingPanel] Student authenticated: ${email} (${stId})`);
     } catch (error) {
       console.error('[FloatingPanel] Authentication error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro ao autenticar';
@@ -247,70 +266,87 @@ const FloatingPanel: React.FC = () => {
     position: 'fixed',
     bottom: '80px',
     right: '16px',
-    width: '280px',
-    backgroundColor: '#FAF5EE',
-    border: '1px solid #D4B896',
-    borderRadius: '16px',
-    padding: '16px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    width: '320px', // slightly wider for better readability
+    backgroundColor: 'rgba(250, 245, 238, 0.85)', // Glassy cream
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(212, 184, 150, 0.4)',
+    borderRadius: '24px',
+    padding: '24px',
+    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.1) inset',
+    fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
     zIndex: 10000,
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 
   const titleStyle: React.CSSProperties = {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#2C2420',
-    marginBottom: '12px',
-    margin: 0,
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#2C2420', // Charcoal
+    lineHeight: '1.2',
+    marginBottom: '16px',
+    letterSpacing: '-0.02em',
   };
 
   const textStyle: React.CSSProperties = {
-    fontSize: '14px',
-    color: '#4A403A',
-    marginBottom: '12px',
-    textAlign: 'center',
+    fontSize: '15px',
+    color: '#5D5048',
+    lineHeight: '1.5',
+    marginBottom: '20px',
   };
 
   const buttonStyle: React.CSSProperties = {
     width: '100%',
-    padding: '10px 16px',
-    marginTop: '8px',
-    backgroundColor: '#F4A900',
-    color: '#2C2420',
+    padding: '12px 20px',
+    backgroundColor: '#F4A900', // Gold
+    color: '#1A1614',
     border: 'none',
-    borderRadius: '9999px',
+    borderRadius: '14px',
     fontWeight: '600',
-    fontSize: '14px',
+    fontSize: '15px',
     cursor: 'pointer',
-    transition: 'opacity 0.2s',
+    boxShadow: '0 4px 14px rgba(244, 169, 0, 0.3)',
+    transition: 'all 0.2s ease',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+  };
+
+  const logoStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '20px'
   };
 
   const pulseStyle: React.CSSProperties = {
     width: '12px',
     height: '12px',
     borderRadius: '50%',
-    backgroundColor: '#F4A900',
+    backgroundColor: '#C1666B', // Elegant Red for recording
     marginRight: '8px',
-    animation: 'pulse 1.5s infinite',
+    animation: 'pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1)',
   };
 
   const renderContent = () => {
     switch (status) {
       case 'unsupported':
         return (
-          <div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', marginBottom: '16px' }}>🚫</div>
             <h3 style={titleStyle}>Não suportado</h3>
-            <p style={textStyle}>Use o Google Chrome para participar</p>
+            <p style={textStyle}>Infelizmente, seu navegador não suporta as APIs necessárias. Use o Google Chrome para participar.</p>
           </div>
         );
 
       case 'mic-denied':
         return (
-          <div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', marginBottom: '16px' }}>🎤</div>
             <h3 style={titleStyle}>Microfone bloqueado</h3>
             <p style={textStyle}>
-              Habilite o microfone nas configurações do Chrome
+              Habilite o acesso ao microfone nas configurações do seu navegador para continuar.
             </p>
           </div>
         );
@@ -318,28 +354,50 @@ const FloatingPanel: React.FC = () => {
       case 'idle':
         return (
           <div>
-            <h3 style={titleStyle}>Bem-vindo ao Polyglan</h3>
-            <p style={textStyle}>Autentique-se com sua conta Google para participar</p>
+            <div style={logoStyle}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: '#F4A900',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <span style={{ color: 'white', fontWeight: 'bold' }}>P</span>
+              </div>
+              <span style={{ fontSize: '18px', fontWeight: '800', color: '#2C2420' }}>POLYGLAN</span>
+            </div>
+            <h3 style={titleStyle}>Aprenda sem fronteiras</h3>
+            <p style={textStyle}>Conecte sua conta para iniciar sua jornada de aprendizado assistido com transcrição em tempo real.</p>
             <button
               style={{
                 ...buttonStyle,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                opacity: isAuthLoading ? 0.7 : 1,
-                cursor: isAuthLoading ? 'not-allowed' : 'pointer',
+                opacity: isAuthLoading ? 0.8 : 1,
+                transform: isAuthLoading ? 'scale(0.98)' : 'none',
+              }}
+              onMouseEnter={(e) => {
+                if (!isAuthLoading) {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(244, 169, 0, 0.4)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isAuthLoading) {
+                  e.currentTarget.style.transform = 'none';
+                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(244, 169, 0, 0.3)';
+                }
               }}
               onClick={handleGoogleLogin}
               disabled={isAuthLoading}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#2C2420" />
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#2C2420" />
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#2C2420" />
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#2C2420" />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#1A1614" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#1A1614" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#1A1614" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#1A1614" />
               </svg>
-              {isAuthLoading ? 'Autenticando...' : 'Login com Google'}
+              {isAuthLoading ? 'Autenticando...' : 'Entrar com Google'}
             </button>
           </div>
         );
@@ -353,19 +411,31 @@ const FloatingPanel: React.FC = () => {
 
       case 'waiting':
         return (
-          <div>
-            <p style={textStyle}>Aguardando professor iniciar...</p>
-            <p style={{ ...textStyle, fontSize: '12px', marginBottom: '12px' }}>
-              Conectado como: {googleEmail}
-            </p>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', marginBottom: '16px' }}>⏳</div>
+            <h3 style={titleStyle}>Tudo pronto</h3>
+            <p style={textStyle}>Aguardando o professor iniciar a sessão...</p>
+            <div style={{
+              padding: '12px',
+              backgroundColor: 'rgba(212, 184, 150, 0.15)',
+              borderRadius: '12px',
+              fontSize: '13px',
+              color: '#5D5048',
+              marginBottom: '16px'
+            }}>
+              Conectado como <strong>{userName || googleEmail}</strong>
+            </div>
             <button
               style={{
                 ...buttonStyle,
-                backgroundColor: '#C1666B',
-                marginTop: '12px',
-                fontSize: '12px',
-                padding: '8px 12px',
+                backgroundColor: 'rgba(193, 102, 107, 0.1)',
+                color: '#C1666B',
+                boxShadow: 'none',
+                marginTop: '8px',
+                fontSize: '13px',
               }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(193, 102, 107, 0.2)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(193, 102, 107, 0.1)'}
               onClick={async () => {
                 await authService.clear();
                 setStatus('idle');
@@ -373,7 +443,7 @@ const FloatingPanel: React.FC = () => {
                 setUserName(null);
               }}
             >
-              Fazer logout
+              Encerrar Sessão
             </button>
           </div>
         );
@@ -381,39 +451,59 @@ const FloatingPanel: React.FC = () => {
       case 'recording':
         return (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
               <div style={pulseStyle}></div>
+              <h3 style={{ ...titleStyle, marginBottom: 0 }}>Sessão Ativa</h3>
+            </div>
+            <div style={{
+              padding: '16px',
+              backgroundColor: 'rgba(255, 255, 255, 0.5)',
+              borderRadius: '16px',
+              minHeight: '80px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            }}>
+              {interimTranscript ? (
+                <p style={{
+                  fontSize: '14px',
+                  color: '#2C2420',
+                  margin: 0,
+                  fontStyle: 'italic',
+                  lineHeight: '1.5'
+                }}>
+                  "{interimTranscript}..."
+                </p>
+              ) : (
+                <p style={{ fontSize: '13px', color: '#9D8977', margin: 0 }}>Capto áudio em tempo real...</p>
+              )}
+            </div>
+            <div style={{ marginTop: '16px' }}>
               <MicStatus status="active" />
             </div>
-            {interimTranscript && (
-              <p
-                style={{
-                  fontSize: '13px',
-                  color: '#4A403A',
-                  fontStyle: 'italic',
-                  marginBottom: '8px',
-                  maxHeight: '80px',
-                  overflow: 'auto',
-                }}
-              >
-                {interimTranscript}
-              </p>
-            )}
           </div>
         );
 
       case 'paused':
         return (
-          <div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', marginBottom: '16px' }}>⏸️</div>
+            <h3 style={titleStyle}>Sessão Pausada</h3>
+            <p style={textStyle}>O professor pausou a transcrição momentaneamente.</p>
             <MicStatus status="paused" />
-            <p style={textStyle}>Professor pausou a sessão</p>
           </div>
         );
 
       case 'ended':
         return (
-          <div>
-            <p style={textStyle}>Sessão encerrada. Obrigado!</p>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', marginBottom: '16px' }}>🎓</div>
+            <h3 style={titleStyle}>Sessão Finalizada</h3>
+            <p style={textStyle}>Resumo e notas estarão disponíveis em breve.</p>
+            <button
+              style={buttonStyle}
+              onClick={() => setStatus('idle')}
+            >
+              Voltar ao Início
+            </button>
           </div>
         );
 
@@ -423,14 +513,26 @@ const FloatingPanel: React.FC = () => {
   };
 
   return (
-    <div style={panelStyle}>
+    <div style={panelStyle} className="polyglan-floating-panel">
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap');
+        
+        .polyglan-floating-panel {
+          font-family: 'Outfit', sans-serif;
+        }
+
         @keyframes pulse {
-          0%, 100% {
-            box-shadow: 0 0 0 0 rgba(244, 169, 0, 0.7);
+          0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(193, 102, 107, 0.7);
           }
-          50% {
-            box-shadow: 0 0 0 8px rgba(244, 169, 0, 0.2);
+          70% {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 10px rgba(193, 102, 107, 0);
+          }
+          100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(193, 102, 107, 0);
           }
         }
       `}</style>

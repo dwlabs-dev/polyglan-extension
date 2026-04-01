@@ -4,6 +4,7 @@ import { setAuthToken } from '../services/api';
 
 interface AuthContextValue {
   jwt: string | null;
+  userId: string | null;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
@@ -18,6 +19,7 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [jwt, setJwt] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +33,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         // 2. Captura o token do Google via o SDK. 
         // Dependendo da versão exata do SDK, pode ser getIdToken(), getAuthToken(), etc.
         let meetToken = '';
+        debugger;
         if (typeof session.getAuthToken === 'function') {
           meetToken = await session.getAuthToken();
         } else if (typeof session.getIdToken === 'function') {
@@ -65,6 +68,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
         setAuthToken(token);
         setJwt(token);
+        setUserId(data.userId || null);
       } catch (err: any) {
         console.error('[AuthProvider] Erro de Autenticação:', err);
         setError(err.message || 'Erro de conexão.');
@@ -81,7 +85,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   return (
-    <AuthContext.Provider value={{ jwt, isAuthenticated: !!jwt, loading, error, getAuthHeader }}>
+    <AuthContext.Provider value={{ jwt, userId, isAuthenticated: !!jwt, loading, error, getAuthHeader }}>
       {children}
     </AuthContext.Provider>
   );

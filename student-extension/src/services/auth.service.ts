@@ -48,8 +48,17 @@ class AuthService {
     await chrome.storage.local.set({ googleEmail: email });
   }
 
+  async getGoogleUserId(): Promise<string | null> {
+    const result = await chrome.storage.local.get('googleUserId');
+    return result.googleUserId || null;
+  }
+
+  async setGoogleUserId(id: string): Promise<void> {
+    await chrome.storage.local.set({ googleUserId: id });
+  }
+
   async clear(): Promise<void> {
-    await chrome.storage.local.remove(['token', 'studentId', 'sessionId', 'lang', 'googleEmail']);
+    await chrome.storage.local.remove(['token', 'studentId', 'sessionId', 'lang', 'googleEmail', 'googleUserId']);
   }
 
   async isSessionValid(): Promise<boolean> {

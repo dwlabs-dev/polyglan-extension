@@ -48,52 +48,34 @@ function getGoogleCredentials(relativePath: string = '../../infra/google/credent
  */
 router.post('/api/auth', async (req: Request, res: Response) => {
   try {
+    const { meetToken } = req.body;
+
+    console.log('[API] Identifying user via meetToken...');
+
+    const oauth2Client = await getAuthClient();
+    oauth2Client.setCredentials({ access_token: oauth2Client.credentials.access_token });
+
+    const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+
+    const userInfo = await oauth2.userinfo.get();
+
+    const userId = userInfo.data.id || '';
+
+    console.log(`[API] Identified user ${userId} via meetToken`);
+
+    // Also check if the backend itself is authenticated for service-level tasks
     const authClient = await getAuthClient();
-    const isAuthenticated = authClient.credentials.access_token !== undefined;
-    console.log(`[API] Authentication status: ${isAuthenticated}`);
-
-    res.json({ status: 'success', "credentials": authClient.credentials });
-  } catch (error: any) {
-    console.error('[API] Error listing participants:', error);
-    res.status(500).json({ status: 'error', message: error.message });
-  }
-});
-
-
-/**
- * POST /api/auth/google
- * Validates a Google OAuth token for student extension usage.
- * Body: { idToken: string }
- * Returns: { status: 'success' | 'error', email?: string, name?: string }
- */
-router.post('/api/auth/google', async (req: Request, res: Response) => {
-  try {
-    const { idToken } = req.body;
-
-    if (!idToken) {
-      res.status(400).json({
-        status: 'error',
-        message: 'idToken is required',
-      });
-      return;
-    }
-
-    // TODO: Validate the idToken using Google OAuth2 client
-    // For now, we're assuming the token is valid from the client side
-    // In production, verify the token signature and claims
-
-    // Decode the JWT to extract user information
-    // const decoded = decodeJwt(idToken);
-    // const email = decoded.email;
-    // const name = decoded.name;
+    const isBackendAuthenticated = authClient.credentials.access_token !== undefined;
 
     res.json({
       status: 'success',
-      message: 'Google token validated',
-      // You can include additional validation data here
+      userId,
+      authenticated: true,
+      isBackendAuthenticated,
+      credentials: authClient.credentials
     });
   } catch (error: any) {
-    console.error('[API] Error validating Google token:', error);
+    console.error('[API] Error checking auth status:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 });
@@ -159,18 +141,20 @@ router.post('/api/auth/student', async (req: Request, res: Response) => {
       const userInfo = await oauth2.userinfo.get();
       const email = userInfo.data.email || '';
       const name = userInfo.data.name || email.split('@')[0];
+      const googleUserId = userInfo.data.id || ''; // sub do Google (ID numérico)
 
       // Generate session credentials for the extension
       const sessionId = randomUUID();
       const sessionToken = randomUUID();
       const lang = 'pt-BR';
 
-      console.log(`[AuthRoute] Student extension authenticated: ${email}, sessionId: ${sessionId}`);
+      console.log(`[AuthRoute] Student extension authenticated: ${email}, sessionId: ${sessionId}, googleUserId: ${googleUserId}`);
 
       res.json({
         status: 'success',
         sessionId,
         token: sessionToken,
+        googleUserId,
         email,
         name,
         lang,

@@ -61,17 +61,36 @@ class SpeechService {
 
   pause(): void {
     if (!this.recognition) return;
-    this.recognition.stop();
+    try {
+      this.recognition.stop();
+      console.log('[SpeechService] Recognition paused');
+    } catch (e) {
+      console.warn('[SpeechService] Error pausing:', e);
+    }
   }
 
   resume(): void {
     if (!this.recognition) return;
-    this.recognition.start();
+    try {
+      this.recognition.start();
+      console.log('[SpeechService] Recognition resumed');
+    } catch (e) {
+      console.warn('[SpeechService] Error resuming:', e);
+    }
   }
 
   stop(): void {
     if (!this.recognition) return;
-    this.recognition.stop();
+    try {
+      this.recognition.onstart = null;
+      this.recognition.onresult = null;
+      this.recognition.onerror = null;
+      this.recognition.onend = null;
+      this.recognition.stop();
+      console.log('[SpeechService] Recognition stopped and handlers cleared');
+    } catch (e) {
+      console.warn('[SpeechService] Error stopping:', e);
+    }
   }
 
   getError(): string | null {

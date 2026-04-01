@@ -66,6 +66,7 @@ export function initWebSocketServer(server: Server) {
              return;
           }
 
+          console.log('[WS] STUDENT_CONNECTED registration:', { userId, role, sessionId });
           registerClient(ws, sessionId, userId, role, payload.name);
           
           ws.send(JSON.stringify({ type: 'JOINED', payload: { status: 'success', userId } }));

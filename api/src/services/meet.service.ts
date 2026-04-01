@@ -70,11 +70,13 @@ export async function listParticipants(): Promise<MeetParticipant[]> {
     const participants: MeetParticipant[] = rawParticipants
       .filter((p: any) => {
         if (!data.id) return true;
-        return p.signedinUser?.user !== `users/${data.id}`;
+        // Normalize the participant and compared user ID
+        const participantId = (p.signedinUser?.user || '').replace('users/', '');
+        return participantId !== data.id;
       })
       .map(
         (p: any, index: number) => ({
-          googleUserId: p.signedinUser?.user || '',
+          googleUserId: (p.signedinUser?.user || '').replace('users/', ''),
           conferenceRecordUserId: p.name || String(index + 1),
           name: p.signedinUser?.displayName || p.anonymousUser?.displayName || `Participant ${index + 1}`
         })

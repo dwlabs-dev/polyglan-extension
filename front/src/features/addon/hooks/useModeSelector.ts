@@ -8,7 +8,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import type { Participant, Mode } from '../../../types';
 
 export function useModeSelector() {
-  const { getAuthHeader } = useAuth();
+  const { getAuthHeader, userId } = useAuth();
   const [step, setStep] = useState<'selection' | 'active'>('selection');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeMode, setActiveMode] = useState<string | null>(null);
@@ -63,16 +63,16 @@ export function useModeSelector() {
       }
 
       setSessionId(meetingCode);
-
-      const professorId = 'professor-123';
-      const wsBaseUrl = import.meta.env.VITE_WS_URL || 'wss://tubes-prix-balloon-configuration.trycloudflare.com';
+      debugger;
+      const professorId = userId || 'professor-anonymous';
+      const wsBaseUrl = import.meta.env.VITE_WS_URL || 'wss://chorus-lifestyle-cashiers-recommends.trycloudflare.com/ws';
       let wsUrl = wsBaseUrl.endsWith('/ws') ? wsBaseUrl : `${wsBaseUrl.replace(/\/$/, '')}/ws`;
-      
+
       // Enforce WSS if on an HTTPS page (Google Meet requirement)
       if (window.location.protocol === 'https:' && wsUrl.startsWith('ws://')) {
         wsUrl = wsUrl.replace('ws://', 'wss://');
       }
-      
+
       socketService.connect(wsUrl, meetingCode, professorId);
     };
 

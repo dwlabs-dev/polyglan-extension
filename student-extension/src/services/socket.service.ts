@@ -16,15 +16,15 @@ class SocketService {
     this.currentUserId = userId;
     this.currentUserName = userName || null;
 
-    const wsBaseUrl = import.meta.env.VITE_WS_URL || 'wss://tubes-prix-balloon-configuration.trycloudflare.com';
+    const wsBaseUrl = import.meta.env.VITE_WS_URL || 'wss://chorus-lifestyle-cashiers-recommends.trycloudflare.com';
     // Ensure the URL ends with /ws and append sessionId as query param
     let wsUrl = wsBaseUrl.endsWith('/ws') ? wsBaseUrl : `${wsBaseUrl.replace(/\/$/, '')}/ws`;
-    
+
     // Enforce WSS if on an HTTPS page (Google Meet requirement)
     if (window.location.protocol === 'https:' && wsUrl.startsWith('ws://')) {
       wsUrl = wsUrl.replace('ws://', 'wss://');
     }
-    
+
     const url = `${wsUrl}?sessionId=${sessionId}`;
 
     console.log(`[SocketService] Connecting to ${url}`);
