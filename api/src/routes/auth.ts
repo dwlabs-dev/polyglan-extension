@@ -7,6 +7,7 @@ import { google } from 'googleapis';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { getAuthClient } from '../lib/google-auth.js';
+import { getLoggedUser } from '@services/meet.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -53,27 +54,27 @@ router.post('/api/auth', async (req: Request, res: Response) => {
     console.log('[API] Identifying user via meetToken...');
 
     const oauth2Client = await getAuthClient();
-    oauth2Client.setCredentials({ access_token: oauth2Client.credentials.access_token });
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: oauth2Client.credentials.access_token });
+    const oauth2 = google.oauth2({ version: 'v2', auth });
 
-    const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+    try {
+      const { data } = await oauth2.userinfo.get();
+      const userId = data.id;
+      console.log(`[API] Identified user ${userId} via meetToken`);
 
-    const userInfo = await oauth2.userinfo.get();
+      return res.json({
+        status: 'success',
+        userId,
+        authenticated: true,
+        credentials: oauth2Client.credentials
+      });
+    } catch (e) {
+      console.warn('[MeetService] Could not fetch userinfo for exclusion.', e);
+      throw e;
+    }
 
-    const userId = userInfo.data.id || '';
 
-    console.log(`[API] Identified user ${userId} via meetToken`);
-
-    // Also check if the backend itself is authenticated for service-level tasks
-    const authClient = await getAuthClient();
-    const isBackendAuthenticated = authClient.credentials.access_token !== undefined;
-
-    res.json({
-      status: 'success',
-      userId,
-      authenticated: true,
-      isBackendAuthenticated,
-      credentials: authClient.credentials
-    });
   } catch (error: any) {
     console.error('[API] Error checking auth status:', error);
     res.status(500).json({ status: 'error', message: error.message });
