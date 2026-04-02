@@ -16,7 +16,7 @@ class SocketService {
     this.currentUserId = userId;
     this.currentUserName = userName || null;
 
-    const wsBaseUrl = import.meta.env.VITE_WS_URL || 'wss://chorus-lifestyle-cashiers-recommends.trycloudflare.com';
+    const wsBaseUrl = import.meta.env.VITE_WS_URL;
     // Ensure the URL ends with /ws and append sessionId as query param
     let wsUrl = wsBaseUrl.endsWith('/ws') ? wsBaseUrl : `${wsBaseUrl.replace(/\/$/, '')}/ws`;
 

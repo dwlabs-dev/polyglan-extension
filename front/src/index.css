@@ -1,48 +1,26 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Nunito:wght@400;600;700;800;900&display=swap');
 
-@theme {
-  --color-polyglan-primary: #F4A900;
-  --color-polyglan-primary-hover: #C98F00;
-  --color-polyglan-secondary: #C1666B;
-  --color-polyglan-secondary-dark: #A0484D;
-  --color-polyglan-beige: #D4B896;
-  --color-polyglan-beige-light: #EDE0D0;
-  --color-polyglan-brown: #000000;
-  --color-polyglan-brown-dark: #2C2420;
-  --color-polyglan-cream: #FAF5EE;
-  --color-polyglan-muted: #8C7B72;
-
-  --font-sans: "Nunito", "DM Sans", "sans-serif";
-  --font-display: "DM Sans", "sans-serif";
-
-  --radius-3xl: 1.5rem;
-  --radius-4xl: 2rem;
-
-  --animate-fade-in-up: fadeInUp 0.5s ease-out forwards;
-  --animate-pulse-soft: pulseSoft 2s ease-in-out infinite;
-
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes pulseSoft {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-  }
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
+  :root {
+    --poly-primary: #F4A900;
+    --poly-primary-hover: #C98F00;
+    --poly-secondary: #C1666B;
+    --poly-secondary-hover: #A0484D;
+    --poly-beige: #D4B896;
+    --poly-beige-light: #EDE0D0;
+    --poly-cream: #FAF5EE;
+    --poly-brown: #000000;
+    --poly-brown-dark: #2C2420;
+    --poly-text-muted: #8C7B72;
+  }
+
   html, body {
     @apply bg-polyglan-cream text-polyglan-brown antialiased selection:bg-polyglan-primary/30;
     font-family: 'Nunito', sans-serif;
-    margin: 0;
-    padding: 0;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  #root {
-    height: 100vh;
   }
 
   h1, h2, h3, h4, .font-display {
@@ -81,21 +59,6 @@
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     @apply bg-polyglan-brown/20;
-  }
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.5s ease-out forwards;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 

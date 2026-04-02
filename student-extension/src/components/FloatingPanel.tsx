@@ -114,7 +114,7 @@ const FloatingPanel: React.FC = () => {
     try {
       // Step 1: Get authorization code from service worker using safeSendMessage
       const response = await safeSendMessage('authenticateWithGoogle');
-      
+
       if (!response || !response.success) {
         throw new Error(response?.error || 'Authentication failed');
       }
@@ -124,7 +124,7 @@ const FloatingPanel: React.FC = () => {
       const redirectUri = `https://${extensionId}.chromiumapp.org/`;
 
       // Step 2: Exchange authorization code for session token on backend
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://chorus-lifestyle-cashiers-recommends.trycloudflare.com';
+      const apiUrl = import.meta.env.VITE_API_URL;
       const authStudentResponse = await fetch(`${apiUrl}/api/auth/student`, {
         method: 'POST',
         headers: {

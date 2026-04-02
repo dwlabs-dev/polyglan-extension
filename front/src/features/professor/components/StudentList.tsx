@@ -16,69 +16,91 @@ export default function StudentList({
   onToggle,
 }: StudentListProps) {
   return (
-    <div className="flex flex-col gap-3">
-      {participants.map((participant) => {
+    <div className="flex flex-col gap-4">
+      {participants.map((participant, index) => {
         const isSelected = selectedIds.includes(participant.conferenceRecordUserId);
         const isOnline = 
           onlineUserIds.has(participant.conferenceRecordUserId) || 
           (participant.name && onlineNames.has(participant.name));
         
         return (
-          <div
+          <button
             key={participant.conferenceRecordUserId}
             onClick={() => onToggle(participant.conferenceRecordUserId)}
-            className={`flex items-center p-4 min-h-[70px] rounded-2xl cursor-pointer transition-all duration-300 border w-full group relative overflow-hidden
+            className={`group relative flex items-center p-4 rounded-3xl border-2 transition-all duration-300 text-left w-full overflow-hidden animate-fade-in-up
               ${isSelected
-                ? 'bg-polyglan-brown text-polyglan-cream border-polyglan-brown shadow-lg shadow-polyglan-brown/20 scale-[1.02]'
-                : 'bg-white border-polyglan-brown/10 hover:border-polyglan-brown/30 hover:bg-polyglan-brown/[0.02] dark:bg-polyglan-brown-dark dark:border-polyglan-cream/10'
+                ? 'bg-white border-polyglan-primary shadow-xl shadow-polyglan-primary/15 scale-[1.02]'
+                : 'bg-white/60 border-polyglan-beige-light hover:border-polyglan-beige hover:bg-white hover:shadow-md'
               }`}
+            style={{ animationDelay: `${(index + 2) * 100}ms` }}
           >
-            {/* Presence Indicator */}
-            <div className="mr-4 relative">
-              <div
-                className={`w-3 h-3 rounded-full transition-colors duration-500 ${
-                  isOnline ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-gray-300 dark:bg-gray-600'
+            {/* Background Decoration for selected state */}
+            {isSelected && (
+              <div className="absolute top-0 right-0 w-16 h-16 bg-polyglan-primary/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            )}
+
+            {/* Presence Indicator Container */}
+            <div className="mr-5 relative flex-shrink-0">
+              <div className="w-12 h-12 bg-polyglan-beige-light/30 rounded-2xl flex items-center justify-center border border-polyglan-beige/20 group-hover:bg-polyglan-beige-light/50 transition-colors">
+                <span className="font-display font-black text-polyglan-brown/40 group-hover:text-polyglan-brown/60 text-lg">
+                  {participant.name?.charAt(0) || '?'}
+                </span>
+              </div>
+              
+              {/* Online status dot */}
+              <div 
+                className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center transition-all ${
+                  isOnline ? 'bg-polyglan-secondary' : 'bg-gray-300'
                 }`}
-              />
-              {isOnline && (
-                <div className="absolute inset-0 w-3 h-3 rounded-full bg-green-500 animate-ping opacity-60" />
-              )}
+              >
+                {isOnline && (
+                  <div className="absolute inset-0 rounded-full bg-polyglan-secondary animate-pulse-soft opacity-60"></div>
+                )}
+              </div>
             </div>
 
-            <div className="flex flex-col flex-grow">
-              <div className="flex items-center justify-between">
-                <span className="font-display font-black text-sm tracking-tight">
+            <div className="flex flex-col flex-grow min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-display font-black text-polyglan-brown text-base tracking-tight truncate">
                   {participant.name}
                 </span>
                 {isOnline && (
-                  <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
-                    Online
+                  <span className="text-[8px] font-black uppercase tracking-widest bg-polyglan-secondary/10 text-polyglan-secondary px-1.5 py-0.5 rounded-md">
+                    Live
                   </span>
                 )}
               </div>
-              <div className={`text-[10px] font-bold opacity-40 truncate max-w-[180px] ${isSelected ? 'text-polyglan-cream' : ''}`}>
-                {isOnline ? 'Extension Active' : 'Offline'}
+              
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${isOnline ? 'text-polyglan-secondary' : 'text-polyglan-muted'}`}>
+                  {isOnline ? 'Extension Connected' : 'Waiting Connection'}
+                </span>
               </div>
             </div>
 
-            {/* Selection Checkbox Replacement */}
-            <div className="ml-2 flex items-center justify-center">
-              <div className={`w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center
-                ${isSelected 
-                  ? 'bg-polyglan-cream border-polyglan-cream' 
-                  : 'border-polyglan-brown/20 group-hover:border-polyglan-brown/40'
-                }`}
+            {/* Selection Checkmark */}
+            <div className={`ml-4 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0
+              ${isSelected 
+                ? 'bg-polyglan-primary border-polyglan-primary rotate-0 scale-100' 
+                : 'border-polyglan-beige/40 rotate-12 scale-90 opacity-20'
+              }`}
+            >
+              <svg 
+                className={`w-4 h-4 text-polyglan-brown transition-transform duration-300 ${isSelected ? 'scale-100' : 'scale-0'}`} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                {isSelected && (
-                  <svg className="w-4 h-4 text-polyglan-brown" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )}
-              </div>
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
             </div>
-          </div>
+          </button>
         );
       })}
     </div>
   );
 }
+

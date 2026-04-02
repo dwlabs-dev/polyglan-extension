@@ -65,7 +65,7 @@ export function useModeSelector() {
       setSessionId(meetingCode);
       debugger;
       const professorId = userId || 'professor-anonymous';
-      const wsBaseUrl = import.meta.env.VITE_WS_URL || 'wss://chorus-lifestyle-cashiers-recommends.trycloudflare.com/ws';
+      const wsBaseUrl = import.meta.env.VITE_WS_URL;
       let wsUrl = wsBaseUrl.endsWith('/ws') ? wsBaseUrl : `${wsBaseUrl.replace(/\/$/, '')}/ws`;
 
       // Enforce WSS if on an HTTPS page (Google Meet requirement)

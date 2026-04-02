@@ -15,7 +15,27 @@ const server = createServer(app);
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'https://meet.google.com',
+      'https://hoped-newspaper-rolls-chuck.trycloudflare.com',
+      'https://administration-roy-huge-signed.trycloudflare.com'
+    ];
+    
+    // Allow extensions (no origin context) or explicitly allowed origins
+    if (!origin || allowedOrigins.some(ao => origin.startsWith(ao))) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Request from blocked origin: ${origin}`);
+      callback(null, true); // Still allow for now in development, but log it
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 204
+}));
 app.use(express.json());
 
 // Routes
