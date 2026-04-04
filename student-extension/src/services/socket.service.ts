@@ -11,10 +11,13 @@ class SocketService {
   private currentUserId: string | null = null;
   private currentUserName: string | null = null;
 
+  private intentionalClose = false;
+
   connect(sessionId: string, userId: string, userName?: string): void {
     this.currentSessionId = sessionId;
     this.currentUserId = userId;
     this.currentUserName = userName || null;
+    this.intentionalClose = false;
 
     const wsBaseUrl = import.meta.env.VITE_WS_URL;
     // Ensure the URL ends with /ws and append sessionId as query param
@@ -31,6 +34,7 @@ class SocketService {
 
     try {
       if (this.ws) {
+        this.intentionalClose = true;
         this.ws.close();
       }
 
@@ -47,7 +51,8 @@ class SocketService {
           sessionId: this.currentSessionId!,
           payload: {
             userId: this.currentUserId,
-            name: this.currentUserName
+            name: this.currentUserName,
+            role: 'STUDENT'
           },
           timestamp: Date.now()
         });
@@ -71,11 +76,16 @@ class SocketService {
 
       this.ws.onclose = () => {
         console.log('WebSocket disconnected');
-        this.attemptReconnect();
+        if (!this.intentionalClose) {
+          this.attemptReconnect();
+        }
+        this.intentionalClose = false; // Reset for next connection
       };
     } catch (error) {
       console.error('Failed to create WebSocket:', error);
-      this.attemptReconnect();
+      if (!this.intentionalClose) {
+        this.attemptReconnect();
+      }
     }
   }
 

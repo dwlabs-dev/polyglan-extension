@@ -23,4 +23,5 @@ export interface ParticipantsResponse {
   status: 'success' | 'error';
   participants: Participant[];
   message?: string;
+  meetingCode?: string;
 }

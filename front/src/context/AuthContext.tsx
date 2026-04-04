@@ -1,10 +1,10 @@
 import { createContext, useState, useEffect, type ReactNode } from 'react';
-import { getMeetSession } from '../lib/meet';
 import { setAuthToken } from '../services/api';
 
 interface AuthContextValue {
   jwt: string | null;
   userId: string | null;
+  meetingId: string | null;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
@@ -22,30 +22,13 @@ interface AuthProviderProps {
  * This ensures that even in React Strict Mode (where components remount),
  * the actual network request and SDK call only happen once.
  */
-let authPromise: Promise<{ jwt: string; userId: string | null }> | null = null;
+let authPromise: Promise<{ jwt: string; userId: string | null, meetingId: string | null }> | null = null;
 
 const fetchAuthToken = async () => {
   try {
-    // 1. O Meet SDK autentica automaticamente via createAddonSession() no Singleton
-    const session = await getMeetSession();
-
-    // 2. Captura o token do Google via o SDK. 
-    let meetToken = '';
-    if (typeof session.getAuthToken === 'function') {
-      meetToken = await session.getAuthToken();
-    } else if (typeof session.getIdToken === 'function') {
-      meetToken = await session.getIdToken();
-    } else {
-      // Fallback assumindo que o SDK adiciona o token na configuração global
-      meetToken = 'meet-auth-token-fallback';
-      console.warn('[AuthProvider] Meet token extraction method not found on session object. Using fallback.');
-    }
-
-    // 3. Envia o token para o endpoint POST /api/auth no polyglan-api
     const response = await fetch(`/api/auth`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ meetToken })
+      headers: { 'Content-Type': 'application/json' }
     });
 
     if (!response.ok) {
@@ -61,7 +44,7 @@ const fetchAuthToken = async () => {
     }
 
     setAuthToken(token);
-    return { jwt: token, userId: data.userId || null };
+    return { jwt: token, userId: data.userId || null, meetingId: data.meetingId };
   } catch (error: any) {
     // Se falhar, limpamos a promise para que uma nova tentativa possa ser feita no futuro se o app remountar
     authPromise = null;
@@ -79,6 +62,7 @@ export const getAuthResult = () => {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [jwt, setJwt] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [meetingId, setMeetingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,10 +71,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Usar o Singleton para pegar o resultado da autenticação
     getAuthResult()
-      .then(({ jwt, userId }) => {
+      .then(({ jwt, userId, meetingId }) => {
         if (isMounted) {
           setJwt(jwt);
           setUserId(userId);
+          setMeetingId(meetingId);
           setLoading(false);
           console.log('[AuthProvider] Autenticação concluída com sucesso');
         }
@@ -113,7 +98,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   return (
-    <AuthContext.Provider value={{ jwt, userId, isAuthenticated: !!jwt, loading, error, getAuthHeader }}>
+    <AuthContext.Provider value={{ jwt, userId, meetingId, isAuthenticated: !!jwt, loading, error, getAuthHeader }}>
       {children}
     </AuthContext.Provider>
   );

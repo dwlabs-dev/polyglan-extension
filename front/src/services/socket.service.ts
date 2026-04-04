@@ -8,11 +8,13 @@ export type WsMessageType =
   | 'STOP_MODE'
   | 'PAUSE_MODE'
   | 'STUDENT_CONNECTED'
+  | 'PROFESSOR_CONNECTED'
   | 'SESSION_COMMAND'
   | 'MODE_CHANGED'
   | 'PARTICIPANT_ONLINE'
   | 'PARTICIPANT_OFFLINE'
   | 'INITIAL_PRESENCE'
+  | 'REQUEST_PRESENCE'
   | 'JOIN_SESSION'
   | 'FEEDBACK';
 
@@ -44,14 +46,14 @@ class SocketService {
     this.socket.onopen = () => {
       console.log('[SocketService] Connected');
       // Register as professor
-      this.send('STUDENT_CONNECTED', { userId: this.userId, role: 'PROFESSOR' });
+      this.send('PROFESSOR_CONNECTED', { userId: this.userId, role: 'PROFESSOR' });
     };
 
     this.socket.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data) as WsMessage;
         console.log(`[SocketService] Received: ${message.type}`, message.payload);
-        
+
         const typeHandlers = this.handlers.get(message.type);
         if (typeHandlers) {
           typeHandlers.forEach(handler => handler(message.payload));

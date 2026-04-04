@@ -8,6 +8,7 @@ interface ParticipantSelectionPageProps {
   selectedIds: string[];
   onlineUserIds: Set<string>;
   onlineNames: Set<string>;
+  sessionId?: string;
   toggleParticipant: (id: string) => void;
   startMode: (mode: Mode) => void;
 }
@@ -19,6 +20,7 @@ export default function ParticipantSelectionPage({
   selectedIds,
   onlineUserIds,
   onlineNames,
+  sessionId,
   toggleParticipant,
   startMode
 }: ParticipantSelectionPageProps) {
@@ -57,6 +59,7 @@ export default function ParticipantSelectionPage({
               selectedIds={selectedIds}
               onlineUserIds={onlineUserIds}
               onlineNames={onlineNames}
+              sessionId={sessionId}
               onToggle={toggleParticipant}
             />
           </div>

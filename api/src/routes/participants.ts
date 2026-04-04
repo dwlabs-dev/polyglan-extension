@@ -12,9 +12,9 @@ const router = Router();
  */
 router.get('/api/participants', ensureAuthenticated, async (_req: Request, res: Response) => {
   try {
-    const participants = await listParticipants();
+    const { participants, meetingCode } = await listParticipants();
 
-    res.json({ status: 'success', participants });
+    res.json({ status: 'success', participants, meetingCode });
   } catch (error: any) {
     console.error('[API] Error listing participants:', error);
     res.status(500).json({ status: 'error', message: error.message });

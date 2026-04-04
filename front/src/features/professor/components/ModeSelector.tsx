@@ -18,7 +18,8 @@ export default function ModeSelector() {
     participants,
     loading,
     error,
-    togglePause
+    togglePause,
+    sessionId
   } = useModeSelector();
 
   const selectedParticipants = participants.filter((u) => selectedIds.includes(u.conferenceRecordUserId));
@@ -35,6 +36,7 @@ export default function ModeSelector() {
           startMode={startMode}
           onlineUserIds={onlineUserIds}
           onlineNames={onlineNames}
+          sessionId={sessionId}
         />
       ) : (
         <ActiveSessionPage

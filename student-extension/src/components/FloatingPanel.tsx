@@ -54,12 +54,12 @@ const FloatingPanel: React.FC = () => {
 
   // Extract meeting code from URL
   const getMeetingCode = () => {
-    const path = window.location.pathname.replace('/', '');
+    const path = window.location.pathname.replace(/\//g, '');
     // Basic validation: 10 chars, typically 3-4-3 format with hyphens
     if (path.length >= 10 && path.includes('-')) {
-      return path;
+      return path.replace(/-/g, '').toLowerCase().trim();
     }
-    return 'default-session';
+    return '';
   };
 
   const meetingCode = getMeetingCode();
@@ -155,7 +155,7 @@ const FloatingPanel: React.FC = () => {
       // Step 4: Set local state and transition to waiting
       const stId = googleUserId || authData.studentId || email || 'unknown-student';
       await authService.setStudentId(stId);
-      await chrome.storage.local.set({ userName: authData.name });
+      await chrome.storage.local.set({ userId: stId, userName: authData.name });
 
       setStudentId(stId);
       setSessionId(meetingCode);

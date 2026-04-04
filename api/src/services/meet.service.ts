@@ -48,17 +48,41 @@ export async function getLiveMeet(accessToken: string): Promise<meet_v2.Meet> {
   return meetClient;
 }
 
+export async function getCurrentSpace(accessToken: string): Promise<meet_v2.Schema$Space> {
+
+  const meetClient = await getLiveMeet(accessToken);
+  const conferenceRecord = await getCurrentConferenceRecord(accessToken);
+
+  // Extract the actual 10-character space code (spaces/abc-mnop-xyz => abcmnopxyz)
+  const rawSpaceName = conferenceRecord?.space || '';
+
+  const spaceResponse = await meetClient.spaces.get({
+    name: rawSpaceName,
+  });
+
+  return spaceResponse.data;
+}
+
 /**
  * List participants from a Google Meet conference record.
  * Falls back to mock data if no meetingCode is provided or API fails.
  *
  * @param meetingCode - The conference record name (e.g. "meetCode/abc-mnop-xyz")
  */
-export async function listParticipants(): Promise<MeetParticipant[]> {
+export async function listParticipants(): Promise<{ participants: MeetParticipant[], meetingCode?: string }> {
   try {
     const accessToken = getAccessToken() as string;
     const meetClient = await getLiveMeet(accessToken);
     const conferenceRecord = await getCurrentConferenceRecord(accessToken);
+
+    // Extract the actual 10-character space code (spaces/abc-mnop-xyz => abcmnopxyz)
+    const rawSpaceName = conferenceRecord?.space || '';
+
+    const spaceResponse = await meetClient.spaces.get({
+      name: rawSpaceName,
+    });
+
+    const matchCode = spaceResponse.data.meetingCode as string;
 
     const response = await (meetClient.conferenceRecords as any).participants.list({
       parent: conferenceRecord.name
@@ -70,23 +94,27 @@ export async function listParticipants(): Promise<MeetParticipant[]> {
     const participants: MeetParticipant[] = rawParticipants
       .filter((p: any) => {
         if (!data.id) return true;
-        // Normalize the participant and compared user ID
         const participantId = (p.signedinUser?.user || '').replace('users/', '');
         return participantId !== data.id;
       })
       .map(
-        (p: any, index: number) => ({
-          googleUserId: (p.signedinUser?.user || '').replace('users/', ''),
-          conferenceRecordUserId: p.name || String(index + 1),
-          name: p.signedinUser?.displayName || p.anonymousUser?.displayName || `Participant ${index + 1}`
-        })
+        (p: any, index: number) => {
+          const googleUserId = (p.signedinUser?.user || '').replace('users/', '');
+          const rawName = p.name || '';
+          const participantSegmentId = rawName.includes('/') ? rawName.split('/').pop() || '' : rawName;
+          return {
+            googleUserId,
+            conferenceRecordUserId: participantSegmentId || googleUserId || String(index + 1),
+            name: p.signedinUser?.displayName || p.anonymousUser?.displayName || `Participant ${index + 1}`
+          };
+        }
       );
 
     console.log(`[MeetService] Found ${participants.length} participants from Meet API.`);
-    return participants;
+    return { participants, meetingCode: (matchCode as string).replace(/-/g, '').toLowerCase().trim() };
   } catch (error) {
     console.error('[MeetService] Error fetching participants from Meet API:', error);
-    return [];
+    return { participants: [] };
   }
 }
 

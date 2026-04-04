@@ -12,15 +12,25 @@ export type WsMessageType =
   | 'STOP_MODE'                 // professor → API
   | 'PAUSE_MODE'                // professor → API
   | 'STUDENT_CONNECTED'         // student → API
+  | 'PROFESSOR_CONNECTED'       // professor → API
   | 'SESSION_COMMAND'           // API → students
   | 'MODE_CHANGED'              // API → all clients
   | 'PARTICIPANT_ONLINE'        // API → professor
   | 'PARTICIPANT_OFFLINE'       // API → professor
   | 'INITIAL_PRESENCE'          // API → professor
+  | 'REQUEST_PRESENCE'          // professor → API (explicit request)
   | 'FEEDBACK'                  // API → specific student
   | 'JOIN_SESSION'              // student → API (handshake)
   | 'JOINED'                    // API → client
   | 'ERROR';                    // API → client
+
+/**
+ * Normalize meeting code by removing hyphens and lowercasing.
+ * Ensures professor (SDK) and student (URL) join the same room.
+ */
+export function normalizeMeetingCode(code: string): string {
+  return code.replace(/-/g, '').toLowerCase().trim();
+}
 
 export interface WsMessage {
   type: WsMessageType;
@@ -52,25 +62,32 @@ export function initWebSocketServer(server: Server) {
     ws.on('message', async (data) => {
       try {
         const message = JSON.parse(data.toString()) as WsMessage;
-        const { type, sessionId, payload } = message;
+        const { type, payload } = message;
+        const sessionId = normalizeMeetingCode(message.sessionId || '');
 
         // 1. Initial Handshake / Registration
-        if (type === 'JOIN_SESSION' || type === 'STUDENT_CONNECTED') {
+        if (type === 'PROFESSOR_CONNECTED' || type === 'JOIN_SESSION' || type === 'STUDENT_CONNECTED') {
           const userId = payload.studentId || payload.userId;
-          const role = type === 'JOIN_SESSION' ? 'STUDENT' : (payload.role || 'STUDENT');
-          
+
+          let role: 'PROFESSOR' | 'STUDENT' = 'STUDENT';
+          if (type === 'PROFESSOR_CONNECTED') {
+            role = 'PROFESSOR';
+          } else if (type === 'JOIN_SESSION' || type === 'STUDENT_CONNECTED') {
+            role = 'STUDENT';
+          } // We explicitly enforce boundaries based on message type instead of unverified payload properties.
+
           // If it's a join session, we verify token (legacy support)
           if (type === 'JOIN_SESSION' && !SessionService.verifyToken(sessionId, userId, payload.token)) {
-             ws.send(JSON.stringify({ type: 'ERROR', payload: { message: 'Invalid token' } }));
-             ws.close();
-             return;
+            ws.send(JSON.stringify({ type: 'ERROR', payload: { message: 'Invalid token' } }));
+            ws.close();
+            return;
           }
 
-          console.log('[WS] STUDENT_CONNECTED registration:', { userId, role, sessionId });
+          console.log(`[WS] ${type} registration:`, { userId, role, sessionId });
           registerClient(ws, sessionId, userId, role, payload.name);
-          
+
           ws.send(JSON.stringify({ type: 'JOINED', payload: { status: 'success', userId } }));
-          
+
           // Notify professor if a student connected or send initial list to professor
           if (role === 'STUDENT') {
             sendToProfessor(sessionId, {
@@ -88,6 +105,19 @@ export function initWebSocketServer(server: Server) {
               timestamp: Date.now()
             }));
           }
+          return;
+        }
+
+        // Request Presence (professor explicitly asks for online students)
+        if (type === 'REQUEST_PRESENCE') {
+          const onlineStudents = getOnlineStudentsInfo(sessionId);
+          console.log(`[WS] REQUEST_PRESENCE for room ${sessionId}, found ${onlineStudents.length} students`);
+          ws.send(JSON.stringify({
+            type: 'INITIAL_PRESENCE',
+            sessionId,
+            payload: { students: onlineStudents },
+            timestamp: Date.now()
+          }));
           return;
         }
 
@@ -127,7 +157,7 @@ export function registerClient(ws: WebSocket, sessionId: string, userId: string,
   }
 
   const clientList = rooms.get(sessionId)!;
-  
+
   // Remove existing connection for same user if exists (to prevent duplicates)
   const existingIndex = clientList.findIndex(c => c.userId === userId && c.role === role);
   if (existingIndex > -1) {

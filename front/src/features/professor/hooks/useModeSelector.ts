@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getMeetSession } from '../../../lib/meet';
 import { socketService } from '../../../services/socket.service';
 import { useParticipantPresence } from '../../professor/hooks/useParticipantPresence';
 import { getParticipants } from '../../../services/participants.service';
@@ -8,19 +7,61 @@ import { useAuth } from '../../../hooks/useAuth';
 import type { Participant, Mode } from '../../../types';
 
 export function useModeSelector() {
-  const { getAuthHeader, userId } = useAuth();
+  const { getAuthHeader, userId, meetingId } = useAuth();
   const [step, setStep] = useState<'selection' | 'active'>('selection');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeMode, setActiveMode] = useState<string | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [sessionId, setSessionId] = useState<string>('default-session');
+  const [sessionId, setSessionId] = useState<string>('');
 
-  // Presence tracking
-  const { onlineUserIds, onlineNames } = useParticipantPresence(sessionId);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Callbacks for presence tracking
+  const handleParticipantOnline = useCallback((user: { userId: string, name?: string }) => {
+    setParticipants(prev => {
+      // Check if user already exists in the list
+      const exists = prev.some(
+        p => p.googleUserId === user.userId || p.conferenceRecordUserId === user.userId
+      );
+
+      if (exists) return prev;
+
+
+
+      // If not, add dynamically
+      const newParticipant: Participant = {
+        name: user.name || `User ${user.userId.substring(0, 4)}...`,
+        googleUserId: user.userId,
+        conferenceRecordUserId: user.userId, // Use googleUserId as fallback
+        isDynamic: true // Flag to identify dynamically added users
+      } as any;
+
+      return [...prev, newParticipant];
+    });
+  }, []);
+
+  const handleParticipantOffline = useCallback((user: { userId: string, name?: string }) => {
+    // Optionally remove dynamically added participants if they go offline
+    setParticipants(prev => {
+      return prev.filter(p => {
+        // Keep them if they are from the original Meet API list (not dynamic)
+        if (!(p as any).isDynamic) return true;
+
+        // Remove if they were dynamically added and match the offline user
+        return p.googleUserId !== user.userId && p.conferenceRecordUserId !== user.userId;
+      });
+    });
+  }, []);
+
+  // Presence tracking
+  const { onlineUserIds, onlineNames } = useParticipantPresence(
+    sessionId,
+    handleParticipantOnline,
+    handleParticipantOffline
+  );
 
   // Fetch participants
   useEffect(() => {
@@ -29,8 +70,26 @@ export function useModeSelector() {
         setLoading(true);
         const { Authorization } = getAuthHeader();
         const data = await getParticipants(Authorization);
+
         if (data.status === 'success') {
-          setParticipants(data.participants);
+          // Merge with any dynamically added participants we might already have
+          setParticipants(prev => {
+            const dynamicUsers = prev.filter(p => (p as any).isDynamic);
+
+            // Map the fetched data
+            const fetchedUsers = data.participants;
+
+            // Re-add dynamic users that weren't returned by the API
+            const newDynamic = dynamicUsers.filter(dyn =>
+              !fetchedUsers.some(f =>
+                f.googleUserId === dyn.googleUserId ||
+                f.conferenceRecordUserId === dyn.conferenceRecordUserId ||
+                f.name === dyn.name
+              )
+            );
+
+            return [...fetchedUsers, ...newDynamic];
+          });
         } else {
           setError(data.message || 'Falha ao carregar participantes.');
         }
@@ -47,24 +106,12 @@ export function useModeSelector() {
   // Connect to WebSocket and sync meeting code
   useEffect(() => {
     const initSocket = async () => {
-      let meetingCode = 'default-session';
-      try {
-        const session = await getMeetSession();
-        const meetingInfo = await session.getMeetingInfo();
-        if (meetingInfo && meetingInfo.meetingCode) {
-          meetingCode = meetingInfo.meetingCode;
-        }
-      } catch (e) {
-        console.warn('[useModeSelector] Failed to get meetingCode from SDK, falling back to URL');
-        const path = window.location.pathname.replace('/', '');
-        if (path.length >= 10 && path.includes('-')) {
-          meetingCode = path;
-        }
-      }
 
-      setSessionId(meetingCode);
-      debugger;
-      const professorId = userId || 'professor-anonymous';
+      if (!userId)
+        return;
+
+      setSessionId(meetingId as string);
+
       const wsBaseUrl = import.meta.env.VITE_WS_URL;
       let wsUrl = wsBaseUrl.endsWith('/ws') ? wsBaseUrl : `${wsBaseUrl.replace(/\/$/, '')}/ws`;
 
@@ -73,7 +120,12 @@ export function useModeSelector() {
         wsUrl = wsUrl.replace('ws://', 'wss://');
       }
 
-      socketService.connect(wsUrl, meetingCode, professorId);
+      socketService.connect(wsUrl, (meetingId as string), (userId as string));
+
+      // Request initial presence after a short delay to ensure connection is fully established
+      setTimeout(() => {
+        socketService.send('REQUEST_PRESENCE', {});
+      }, 500);
     };
 
     initSocket();
