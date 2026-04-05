@@ -85,7 +85,8 @@ export async function listParticipants(): Promise<{ participants: MeetParticipan
     const matchCode = spaceResponse.data.meetingCode as string;
 
     const response = await (meetClient.conferenceRecords as any).participants.list({
-      parent: conferenceRecord.name
+      parent: conferenceRecord.name,
+      filter: `latest_end_time IS NULL`
     });
 
     const data = await getLoggedUser();

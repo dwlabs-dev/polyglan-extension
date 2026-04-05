@@ -74,10 +74,33 @@ export function useParticipantPresence(
       }
     });
 
+    // Fallback Listener for STUDENT_DISCONNECTED (in case API broadcasts it directly)
+    const offStudentDisc = socketService.on('STUDENT_DISCONNECTED', (payload: any) => {
+      console.log(`[useParticipantPresence] Fallback: User ${payload.userId} disconnected explicitly`);
+
+      setOnlineUserIds(prev => {
+        const next = new Set(prev);
+        next.delete(payload.userId);
+        return next;
+      });
+      if (payload.name) {
+        setOnlineNames(prev => {
+          const next = new Set(prev);
+          next.delete(payload.name);
+          return next;
+        });
+      }
+
+      if (onParticipantOffline) {
+        onParticipantOffline({ userId: payload.userId, name: payload.name });
+      }
+    });
+
     return () => {
       offInitial();
       offOnline();
       offOffline();
+      offStudentDisc();
     };
   }, [sessionId, onParticipantOnline, onParticipantOffline]);
 

@@ -12,6 +12,7 @@ export type WsMessageType =
   | 'STOP_MODE'                 // professor → API
   | 'PAUSE_MODE'                // professor → API
   | 'STUDENT_CONNECTED'         // student → API
+  | 'STUDENT_DISCONNECTED'      // student → API
   | 'PROFESSOR_CONNECTED'       // professor → API
   | 'SESSION_COMMAND'           // API → students
   | 'MODE_CHANGED'              // API → all clients
@@ -118,6 +119,19 @@ export function initWebSocketServer(server: Server) {
             payload: { students: onlineStudents },
             timestamp: Date.now()
           }));
+          return;
+        }
+
+        // Explicit Student Disconnect
+        if (type === 'STUDENT_DISCONNECTED') {
+          console.log(`[WS] Explicit STUDENT_DISCONNECTED from ${payload.userId || 'unknown'}`);
+          sendToProfessor(sessionId, {
+            type: 'PARTICIPANT_OFFLINE',
+            sessionId,
+            payload: { userId: payload.userId, name: payload.name },
+            timestamp: Date.now()
+          });
+          removeClient(ws);
           return;
         }
 
