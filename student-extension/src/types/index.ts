@@ -17,7 +17,8 @@ export type WsMessageType =
   | 'FEEDBACK'
   | 'PARTICIPANT_JOINED'
   | 'PARTICIPANT_LEFT'
-  | 'STUDENT_CONNECTED';
+  | 'STUDENT_CONNECTED'
+  | 'STUDENT_DISCONNECTED';
 
 export type TranscriptionFragment = {
   type: 'TRANSCRIPTION_FRAGMENT';

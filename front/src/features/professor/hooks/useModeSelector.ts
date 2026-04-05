@@ -63,45 +63,45 @@ export function useModeSelector() {
     handleParticipantOffline
   );
 
+  const fetchParticipants = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { Authorization } = getAuthHeader();
+      const data = await getParticipants(Authorization);
+
+      if (data.status === 'success') {
+        // Merge with any dynamically added participants we might already have
+        setParticipants(prev => {
+          const dynamicUsers = prev.filter(p => (p as any).isDynamic);
+
+          // Map the fetched data
+          const fetchedUsers = data.participants;
+
+          // Re-add dynamic users that weren't returned by the API
+          const newDynamic = dynamicUsers.filter(dyn =>
+            !fetchedUsers.some(f =>
+              f.googleUserId === dyn.googleUserId ||
+              f.conferenceRecordUserId === dyn.conferenceRecordUserId ||
+              f.name === dyn.name
+            )
+          );
+
+          return [...fetchedUsers, ...newDynamic];
+        });
+      } else {
+        setError(data.message || 'Falha ao carregar participantes.');
+      }
+    } catch (e) {
+      setError('Erro de conexão com o servidor.');
+    } finally {
+      setLoading(false);
+    }
+  }, [getAuthHeader]);
+
   // Fetch participants
   useEffect(() => {
-    const fetchParticipants = async () => {
-      try {
-        setLoading(true);
-        const { Authorization } = getAuthHeader();
-        const data = await getParticipants(Authorization);
-
-        if (data.status === 'success') {
-          // Merge with any dynamically added participants we might already have
-          setParticipants(prev => {
-            const dynamicUsers = prev.filter(p => (p as any).isDynamic);
-
-            // Map the fetched data
-            const fetchedUsers = data.participants;
-
-            // Re-add dynamic users that weren't returned by the API
-            const newDynamic = dynamicUsers.filter(dyn =>
-              !fetchedUsers.some(f =>
-                f.googleUserId === dyn.googleUserId ||
-                f.conferenceRecordUserId === dyn.conferenceRecordUserId ||
-                f.name === dyn.name
-              )
-            );
-
-            return [...fetchedUsers, ...newDynamic];
-          });
-        } else {
-          setError(data.message || 'Falha ao carregar participantes.');
-        }
-      } catch (e) {
-        setError('Erro de conexão com o servidor.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchParticipants();
-  }, [getAuthHeader]);
+  }, [fetchParticipants]);
 
   // Connect to WebSocket and sync meeting code
   useEffect(() => {
@@ -209,6 +209,7 @@ export function useModeSelector() {
     participants,
     loading,
     error,
-    togglePause
+    togglePause,
+    refreshParticipants: fetchParticipants
   };
 }

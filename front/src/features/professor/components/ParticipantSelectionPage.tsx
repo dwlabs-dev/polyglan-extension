@@ -11,6 +11,7 @@ interface ParticipantSelectionPageProps {
   sessionId?: string;
   toggleParticipant: (id: string) => void;
   startMode: (mode: Mode) => void;
+  onRefresh?: () => void;
 }
 
 export default function ParticipantSelectionPage({
@@ -22,7 +23,8 @@ export default function ParticipantSelectionPage({
   onlineNames,
   sessionId,
   toggleParticipant,
-  startMode
+  startMode,
+  onRefresh
 }: ParticipantSelectionPageProps) {
   return (
     <div className="flex flex-col flex-grow bg-polyglan-cream text-polyglan-brown dark:bg-polyglan-brown-dark dark:text-polyglan-cream overflow-hidden">
@@ -34,13 +36,32 @@ export default function ParticipantSelectionPage({
               Polyglan Add-on
             </h2>
           </div>
-          <h1 className="text-3xl font-display font-black leading-tight text-polyglan-brown dark:text-polyglan-cream">
-            Participantes <br />
-            <span className="text-polyglan-primary">Ativos</span>
-          </h1>
-          <p className="text-xs text-polyglan-muted mt-2 font-medium">
-            Selecione os alunos para as atividades síncronas.
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-display font-black leading-tight text-polyglan-brown dark:text-polyglan-cream">
+                Alunos <br />
+                <span className="text-polyglan-primary">Presentes</span>
+              </h1>
+              <p className="text-xs text-polyglan-muted mt-2 font-medium">
+                Selecione os alunos para as atividades síncronas.
+              </p>
+            </div>
+            {onRefresh && (
+              <button 
+                onClick={onRefresh}
+                disabled={loading}
+                title="Atualizar lista de participantes"
+                className="p-2 rounded-full border border-polyglan-beige/50 bg-white/50 text-polyglan-brown hover:bg-polyglan-beige/30 transition-colors dark:bg-polyglan-brown/30 dark:border-polyglan-beige/20 dark:text-polyglan-cream dark:hover:bg-polyglan-brown/50 disabled:opacity-50"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={loading ? "animate-spin" : ""}>
+                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                  <path d="M3 3v5h5"/>
+                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                  <path d="M16 21v-5h5"/>
+                </svg>
+              </button>
+            )}
+          </div>
         </header>
 
         {loading ? (

@@ -1,8 +1,8 @@
 export const ADDON_UI_TEXT = {
   BRAND: 'Polyglan',
-  PARTICIPANTS_ACTIVE: 'Participantes Ativos',
+  PARTICIPANTS_ACTIVE: 'Alunos Presentes',
   LOADING: 'Carregando...',
-  NO_PARTICIPANTS: 'Nenhum participante encontrado',
+  NO_PARTICIPANTS: 'Nenhum aluno encontrado',
   START_HISTORY: 'Iniciar História',
   MODE_DEBATE: 'Modo Debate',
   SELECTED_COUNT_SUFFIX: 'selecionado(s) para a atividade',

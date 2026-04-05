@@ -19,6 +19,7 @@ export default function ModeSelector() {
     loading,
     error,
     togglePause,
+    refreshParticipants,
     sessionId
   } = useModeSelector();
 
@@ -37,6 +38,7 @@ export default function ModeSelector() {
           onlineUserIds={onlineUserIds}
           onlineNames={onlineNames}
           sessionId={sessionId}
+          onRefresh={refreshParticipants}
         />
       ) : (
         <ActiveSessionPage

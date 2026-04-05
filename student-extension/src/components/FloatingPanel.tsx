@@ -416,31 +416,59 @@ const FloatingPanel: React.FC = () => {
             <h3 style={titleStyle}>Tudo pronto</h3>
             <p style={textStyle}>Aguardando o professor iniciar a sessão...</p>
             <div style={{
+              backgroundColor: '#F4A900', // Mustard Yellow
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+              letterSpacing: '0.15em',
+              color: '#2C2420',           // Dark Brown text
+              marginBottom: '16px',
               padding: '12px',
-              backgroundColor: 'rgba(212, 184, 150, 0.15)',
               borderRadius: '12px',
-              fontSize: '13px',
-              color: '#5D5048',
-              marginBottom: '16px'
+              fontSize: '13px'
             }}>
-              Conectado como <strong>{userName || googleEmail}</strong>
+              CONECTADO COMO <strong>{userName || googleEmail}</strong>
             </div>
             <button
               style={{
                 ...buttonStyle,
-                backgroundColor: 'rgba(193, 102, 107, 0.1)',
-                color: '#C1666B',
-                boxShadow: 'none',
+                backgroundColor: '#C1666B', // Terracotta
+                color: '#FFFFFF',           // White text
+                boxShadow: '0 4px 14px rgba(193, 102, 107, 0.3)',
                 marginTop: '8px',
                 fontSize: '13px',
+                letterSpacing: '0.15em',
+                borderRadius: '9999px',     // Pill shape
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(193, 102, 107, 0.2)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(193, 102, 107, 0.1)'}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#A0484D'; // Dark Terracotta
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#C1666B';
+                e.currentTarget.style.transform = 'none';
+              }}
               onClick={async () => {
-                await authService.clear();
-                setStatus('idle');
-                setGoogleEmail(null);
-                setUserName(null);
+                // Determine user ID
+                const stId = studentId || googleEmail || 'unknown';
+
+                // Send disconnect message
+                socketService.send({
+                  type: 'STUDENT_DISCONNECTED',
+                  sessionId: meetingCode,
+                  payload: { userId: stId, name: userName },
+                  timestamp: Date.now()
+                });
+
+                // Small delay to ensure message goes through before killing connection
+                setTimeout(async () => {
+                  socketService.disconnect();
+                  await authService.clear();
+                  setStatus('idle');
+                  setGoogleEmail(null);
+                  setUserName(null);
+                  setStudentId(null);
+                  setSessionId(null);
+                }, 100);
               }}
             >
               Encerrar Sessão
