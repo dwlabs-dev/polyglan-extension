@@ -7,6 +7,7 @@ import MicStatus from './MicStatus';
 import FeedbackPanel from './FeedbackPanel';
 
 type FloatingPanelStatus = 'idle' | 'authenticating' | 'waiting' | 'recording' | 'paused' | 'ended' | 'unsupported' | 'mic-denied';
+type AudioCaptureStatus = 'inactive' | 'needs-gesture' | 'active' | 'error';
 
 interface Feedback {
   id: string;
@@ -51,6 +52,8 @@ const FloatingPanel: React.FC = () => {
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [audioCaptureStatus, setAudioCaptureStatus] = useState<AudioCaptureStatus>('inactive');
+  const [audioError, setAudioError] = useState<string | null>(null);
 
   // Extract meeting code from URL
   const getMeetingCode = () => {
@@ -107,6 +110,18 @@ const FloatingPanel: React.FC = () => {
     };
 
     init();
+
+    // Listener for audio capture status from service worker
+    const messageListener = (message: any) => {
+      if (message.type === 'CAPTURE_STATUS') {
+        console.log(`[FloatingPanel] Audio capture status update: ${message.status}`);
+        setAudioCaptureStatus(message.status);
+        if (message.error) setAudioError(message.error);
+      }
+    };
+
+    chrome.runtime.onMessage.addListener(messageListener);
+    return () => chrome.runtime.onMessage.removeListener(messageListener);
   }, []);
 
   const handleGoogleLogin = async () => {
@@ -602,6 +617,26 @@ const FloatingPanel: React.FC = () => {
                    }}>LIVE</span>
                 )}
               </div>
+
+              {/* GESTURE PROMPT: Required in MV3 for tabCapture */}
+              {audioCaptureStatus === 'needs-gesture' && (
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#FFF1F1',
+                  border: '1px solid #FFD1D1',
+                  borderRadius: '16px',
+                  marginBottom: '20px',
+                  textAlign: 'center',
+                  animation: 'shake 0.5s ease-in-out'
+                }}>
+                  <p style={{ ...textStyle, fontSize: '13px', marginBottom: '12px', color: '#B3261E', fontWeight: 'bold' }}>
+                    ⚠️ AUDIO DESCONECTADO
+                  </p>
+                  <p style={{ ...textStyle, fontSize: '12px', marginBottom: '0' }}>
+                    Clique no <strong>ícone da Polyglan</strong> acima e depois em <strong>CONECTAR ÁUDIO</strong> para autorizar o som.
+                  </p>
+                </div>
+              )}
               
               <div style={{
                 padding: '24px',
@@ -791,6 +826,12 @@ const FloatingPanel: React.FC = () => {
             transform: scale(1);
             box-shadow: 0 0 0 0 rgba(193, 102, 107, 0);
           }
+        }
+
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
         }
       `}</style>
       {renderContent()}

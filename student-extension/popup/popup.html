@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Polyglan Student - Connect</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap');
+        
+        body {
+            width: 300px;
+            padding: 24px;
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background-color: #FAF5EE;
+            color: #2C2420;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .logo-box {
+            width: 32px;
+            height: 32px;
+            background-color: #F4A900;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #2C2420;
+            font-weight: 800;
+        }
+        
+        .logo-text {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+        }
+        
+        h3 {
+            margin: 0 0 12px 0;
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        
+        p {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #5D5048;
+            margin-bottom: 24px;
+        }
+        
+        #connect-btn {
+            width: 100%;
+            padding: 14px 20px;
+            background-color: #F4A900;
+            color: #2C2420;
+            border: none;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(244, 169, 0, 0.3);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        #connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(244, 169, 0, 0.4);
+        }
+        
+        #connect-btn:active {
+            transform: translateY(0);
+        }
+
+        #status {
+            margin-top: 16px;
+            font-size: 12px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+
+        .success { color: #2E7D32; }
+        .error { color: #C1666B; }
+    </style>
+</head>
+<body>
+    <div class="logo">
+        <div class="logo-box">P</div>
+        <div class="logo-text">POLYGLAN</div>
+    </div>
+    
+    <h3>Conectar Áudio</h3>
+    <p>Para que a IA analise sua participação, precisamos capturar o áudio desta aba.</p>
+    
+    <button id="connect-btn">CONECTAR ÁUDIO 🎤</button>
+    <div id="status"></div>
+
+    <script type="module" src="./popup.ts"></script>
+</body>
+</html>

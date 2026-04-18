@@ -149,6 +149,7 @@ router.post('/api/session/:id/mode', ensureAuthenticated, async (req: Request, r
     // Broadcast change to all students via WebSocket
     broadcastToSession(sessionId, {
       type: 'SESSION_COMMAND',
+      sessionId,
       payload: {
         command: mode ? 'START' : 'STOP',
         mode,

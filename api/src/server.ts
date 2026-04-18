@@ -9,6 +9,7 @@ import healthRouter from '@routes/health.js';
 import sessionRouter from '@routes/session.js';
 import participantsRouter from '@routes/participants.js';
 import { initWebSocketServer } from './lib/websocket.js';
+import { initAudioWebSocketServer } from './lib/audio-ws.js';
 
 const app = express();
 const server = createServer(app);
@@ -47,8 +48,11 @@ app.use(sessionRouter);
 app.use(meetRouter);
 app.use(participantsRouter);
 
-// Initialize WebSocket server
+// Initialize WebSocket server (session/presence — port 3001)
 initWebSocketServer(server);
+
+// Initialize Audio WebSocket server (audio streaming — port 3002)
+initAudioWebSocketServer();
 
 server.listen(PORT, () => {
   console.log(`[API] Polyglan API running on http://localhost:${PORT}`);
