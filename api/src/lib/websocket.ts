@@ -144,7 +144,25 @@ export function initWebSocketServer(server: Server) {
         // 3. Transcription Fragments
         if (type === 'TRANSCRIPTION_FRAGMENT') {
           // Log or process transcription
-          console.log(`[WS] Transcription from ${payload.studentId || 'unknown'}: ${payload.text.substring(0, 30)}...`);
+          console.log(`[WS] Fragment from student ${payload.studentId || 'unknown'}: "${payload.text.substring(0, 30)}..." (Final: ${payload.isFinal})`);
+          
+          if (payload.text && payload.isFinal) {
+            try {
+              const TranscriptionService = await import('../services/transcription.service.js');
+              await TranscriptionService.saveFragment({
+                sessionId,
+                studentId: payload.studentId || 'unknown',
+                text: payload.text,
+                isFinal: payload.isFinal,
+                lang: payload.lang || 'pt-BR',
+                mode: payload.mode || null,
+                modeSegmentId: payload.modeSegmentId || null,
+                timestamp: Date.now()
+              });
+            } catch (saveErr) {
+              console.error('[WS] Failed to save fragment:', saveErr);
+            }
+          }
           return;
         }
 

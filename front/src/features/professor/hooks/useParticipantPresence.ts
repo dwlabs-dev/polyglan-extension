@@ -54,11 +54,12 @@ export function useParticipantPresence(
 
     // Listener for PARTICIPANT_OFFLINE
     const offOffline = socketService.on('PARTICIPANT_OFFLINE', (payload: any) => {
-      console.log(`[useParticipantPresence] User ${payload.userId} is offline`);
+      console.log(`[useParticipantPresence] PARTICIPANT_OFFLINE: ${payload.userId} (${payload.name})`);
 
       setOnlineUserIds(prev => {
         const next = new Set(prev);
-        next.delete(payload.userId);
+        const deleted = next.delete(payload.userId);
+        console.log(`[useParticipantPresence] ID ${payload.userId} deleted from set? ${deleted}. Remaining:`, Array.from(next));
         return next;
       });
       if (payload.name) {

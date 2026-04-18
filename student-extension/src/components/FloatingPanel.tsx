@@ -183,17 +183,34 @@ const FloatingPanel: React.FC = () => {
     socketService.onMessage((message: WsMessage) => {
       if (message.type === 'SESSION_COMMAND') {
         const payload = message.payload as any;
-        const command = payload.command;
-
-        if (command === 'START') {
-          setMode(payload.mode);
-          setModeSegmentId(payload.modeSegmentId);
+        const command = payload.command;        if (command === 'START') {
+          console.log(`[FloatingPanel] SESSION_START received:`, payload);
+          setMode(payload.mode || null);
+          setModeSegmentId(payload.modeSegmentId || null);
           setStatus('recording');
+          
+          if (payload.mode) {
+              console.log(`[FloatingPanel] Valid mode detected: ${payload.mode}`);
+          } else {
+              console.warn(`[FloatingPanel] START command received without mode!`);
+          }
+
           speechService.start(stateRef.current.lang, (text, isFinal) => {
             setInterimTranscript(text);
             const { sessionId: currentSid, studentId: currentStid, mode: currentMode, modeSegmentId: currentSegmentId, lang: currentLang } = stateRef.current;
 
+            // Extra verbose logging on speech events
+            if (isFinal) {
+                console.log(`[FloatingPanel] Final text captured: "${text.substring(0, 30)}..."`);
+            }
+
             if (isFinal && currentSid && currentStid) {
+              console.log(`[FloatingPanel] Sending TRANSCRIPTION_FRAGMENT to server...`, {
+                  studentId: currentStid,
+                  mode: currentMode,
+                  modeSegmentId: currentSegmentId
+              });
+              
               socketService.send({
                 type: 'TRANSCRIPTION_FRAGMENT',
                 sessionId: currentSid,
@@ -203,6 +220,7 @@ const FloatingPanel: React.FC = () => {
                   lang: currentLang,
                   mode: currentMode,
                   modeSegmentId: currentSegmentId,
+                  studentId: currentStid, // Crucial: associated data with a student
                 },
                 timestamp: Date.now(),
               });
@@ -210,16 +228,18 @@ const FloatingPanel: React.FC = () => {
             }
           });
         } else if (command === 'PAUSE') {
+          console.log(`[FloatingPanel] PAUSE command received`);
           speechService.pause();
           setStatus('paused');
-          setMode(null);
-          setModeSegmentId(null);
         } else if (command === 'STOP') {
+          console.log(`[FloatingPanel] STOP command received`);
           speechService.stop();
-          setStatus('ended');
+          setInterimTranscript('');
           setMode(null);
           setModeSegmentId(null);
+          setStatus('waiting');
         } else if (command === 'SWITCH_SPEAKER') {
+          console.log(`[FloatingPanel] SWITCH_SPEAKER: target is ${payload.targetStudentId}`);
           if (payload.targetStudentId === stateRef.current.studentId) {
             speechService.start(stateRef.current.lang, (text, isFinal) => {
               setInterimTranscript(text);
@@ -235,6 +255,7 @@ const FloatingPanel: React.FC = () => {
                     lang: currentLang,
                     mode: currentMode,
                     modeSegmentId: currentSegmentId,
+                    studentId: currentStid,
                   },
                   timestamp: Date.now(),
                 });
@@ -262,27 +283,48 @@ const FloatingPanel: React.FC = () => {
     });
   };
 
+  // State update logger for real-time debugging in the browser console
+  useEffect(() => {
+     console.log(`[FloatingPanel] DEBUG SYNC: status=${status}, mode=${mode}`);
+  }, [status, mode]);
+
+  // Robust check for History Mode that handles accents and case (Regex-based extreme normalization)
+  const isHistoryMode = React.useMemo(() => {
+    if (!mode) return false;
+    // Normalize to handle 'HISTÓRIA', 'historia', 'History', etc.
+    const normalized = mode.toString()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+        
+    return normalized === 'history' || normalized === 'historia';
+  }, [mode]);
+
   const panelStyle: React.CSSProperties = {
     position: 'fixed',
     bottom: '80px',
     right: '16px',
-    width: '320px', // slightly wider for better readability
-    backgroundColor: 'rgba(250, 245, 238, 0.85)', // Glassy cream
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    border: '1px solid rgba(212, 184, 150, 0.4)',
-    borderRadius: '24px',
-    padding: '24px',
-    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.1) inset',
+    width: '320px',
+    backgroundColor: isHistoryMode && status === 'recording' ? '#FFF9F0' : 'rgba(250, 245, 238, 0.9)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    border: isHistoryMode && status === 'recording' ? '4px solid #F4A900' : '1px solid rgba(212, 184, 150, 0.5)',
+    borderRadius: '28px',
+    padding: '0',
+    overflow: 'hidden',
+    boxShadow: isHistoryMode && status === 'recording' 
+        ? '0 20px 50px rgba(244, 169, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2) inset'
+        : '0 12px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.1) inset',
     fontFamily: '"Outfit", "Inter", -apple-system, sans-serif',
     zIndex: 10000,
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    transition: 'all 0.5s cubic-bezier(0.19, 1, 0.22, 1)',
   };
 
   const titleStyle: React.CSSProperties = {
     fontSize: '20px',
     fontWeight: '700',
-    color: '#2C2420', // Charcoal
+    color: '#2C2420',
     lineHeight: '1.2',
     marginBottom: '16px',
     letterSpacing: '-0.02em',
@@ -298,12 +340,12 @@ const FloatingPanel: React.FC = () => {
   const buttonStyle: React.CSSProperties = {
     width: '100%',
     padding: '12px 20px',
-    backgroundColor: '#F4A900', // Gold
-    color: '#1A1614',
+    backgroundColor: '#F4A900',
+    color: '#2C2420',
     border: 'none',
-    borderRadius: '14px',
-    fontWeight: '600',
-    fontSize: '15px',
+    borderRadius: '9999px',
+    fontWeight: '700',
+    fontSize: '14px',
     cursor: 'pointer',
     boxShadow: '0 4px 14px rgba(244, 169, 0, 0.3)',
     transition: 'all 0.2s ease',
@@ -311,29 +353,55 @@ const FloatingPanel: React.FC = () => {
     alignItems: 'center',
     justifyContent: 'center',
     gap: '10px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
   };
 
   const logoStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    marginBottom: '20px'
+    marginBottom: '24px'
   };
 
   const pulseStyle: React.CSSProperties = {
     width: '12px',
     height: '12px',
     borderRadius: '50%',
-    backgroundColor: '#C1666B', // Elegant Red for recording
+    backgroundColor: '#C1666B',
     marginRight: '8px',
-    animation: 'pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1)',
+    animation: 'pulse 1.5s ease-in-out infinite',
+  };
+
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  // Timer for History Mode
+  useEffect(() => {
+    let timer: number | undefined;
+    if (status === 'recording' && isHistoryMode) {
+      timer = window.setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+      if (timer) clearInterval(timer);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [status, isHistoryMode]);
+
+  const formatTime = (s: number) => {
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const renderContent = () => {
     switch (status) {
       case 'unsupported':
         return (
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ textAlign: 'center', padding: '24px' }}>
             <div style={{ fontSize: '32px', marginBottom: '16px' }}>🚫</div>
             <h3 style={titleStyle}>Não suportado</h3>
             <p style={textStyle}>Infelizmente, seu navegador não suporta as APIs necessárias. Use o Google Chrome para participar.</p>
@@ -342,7 +410,7 @@ const FloatingPanel: React.FC = () => {
 
       case 'mic-denied':
         return (
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ textAlign: 'center', padding: '24px' }}>
             <div style={{ fontSize: '32px', marginBottom: '16px' }}>🎤</div>
             <h3 style={titleStyle}>Microfone bloqueado</h3>
             <p style={textStyle}>
@@ -353,7 +421,7 @@ const FloatingPanel: React.FC = () => {
 
       case 'idle':
         return (
-          <div>
+          <div style={{ padding: '24px' }}>
             <div style={logoStyle}>
               <div style={{
                 width: '32px',
@@ -364,7 +432,7 @@ const FloatingPanel: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <span style={{ color: 'white', fontWeight: 'bold' }}>P</span>
+                <span style={{ color: '#2C2420', fontWeight: 'bold' }}>P</span>
               </div>
               <span style={{ fontSize: '18px', fontWeight: '800', color: '#2C2420' }}>POLYGLAN</span>
             </div>
@@ -392,10 +460,10 @@ const FloatingPanel: React.FC = () => {
               disabled={isAuthLoading}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#1A1614" />
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#1A1614" />
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#1A1614" />
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#1A1614" />
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#2C2420" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#2C2420" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#2C2420" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#2C2420" />
               </svg>
               {isAuthLoading ? 'Autenticando...' : 'Entrar com Google'}
             </button>
@@ -404,43 +472,41 @@ const FloatingPanel: React.FC = () => {
 
       case 'authenticating':
         return (
-          <div>
-            <p style={textStyle}>Autenticando...</p>
+          <div style={{ textAlign: 'center', padding: '44px 24px' }}>
+            <div className="lds-ring"><div></div><div></div><div></div><div></div></div>
+            <p style={{...textStyle, marginTop: '20px'}}>Autenticando...</p>
           </div>
         );
 
       case 'waiting':
         return (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', marginBottom: '16px' }}>⏳</div>
+          <div style={{ textAlign: 'center', padding: '24px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '24px' }}>⏳</div>
             <h3 style={titleStyle}>Tudo pronto</h3>
-            <p style={textStyle}>Aguardando o professor iniciar a sessão...</p>
+            <p style={textStyle}>O professor está preparando o ambiente. Aguarde um instante.</p>
             <div style={{
-              backgroundColor: '#F4A900', // Mustard Yellow
+              backgroundColor: '#EDE0D0', 
               fontWeight: 'bold',
               textTransform: 'uppercase',
-              letterSpacing: '0.15em',
-              color: '#2C2420',           // Dark Brown text
-              marginBottom: '16px',
-              padding: '12px',
-              borderRadius: '12px',
-              fontSize: '13px'
+              letterSpacing: '0.1em',
+              color: '#2C2420',
+              marginBottom: '24px',
+              padding: '14px',
+              borderRadius: '16px',
+              fontSize: '11px',
+              border: '1px solid #D4B896'
             }}>
-              CONECTADO COMO <strong>{userName || googleEmail}</strong>
+              LOGADO COMO <strong>{userName || googleEmail?.split('@')[0]}</strong>
             </div>
             <button
               style={{
                 ...buttonStyle,
                 backgroundColor: '#C1666B', // Terracotta
-                color: '#FFFFFF',           // White text
+                color: '#FFFFFF',
                 boxShadow: '0 4px 14px rgba(193, 102, 107, 0.3)',
-                marginTop: '8px',
-                fontSize: '13px',
-                letterSpacing: '0.15em',
-                borderRadius: '9999px',     // Pill shape
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#A0484D'; // Dark Terracotta
+                e.currentTarget.style.backgroundColor = '#A0484D';
                 e.currentTarget.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
@@ -448,18 +514,13 @@ const FloatingPanel: React.FC = () => {
                 e.currentTarget.style.transform = 'none';
               }}
               onClick={async () => {
-                // Determine user ID
                 const stId = studentId || googleEmail || 'unknown';
-
-                // Send disconnect message
                 socketService.send({
                   type: 'STUDENT_DISCONNECTED',
                   sessionId: meetingCode,
                   payload: { userId: stId, name: userName },
                   timestamp: Date.now()
                 });
-
-                // Small delay to ensure message goes through before killing connection
                 setTimeout(async () => {
                   socketService.disconnect();
                   await authService.clear();
@@ -477,58 +538,153 @@ const FloatingPanel: React.FC = () => {
         );
 
       case 'recording':
+        console.log(`[FloatingPanel] Rendering recording state. Mode: ${mode}, isHistoryMode: ${isHistoryMode}`);
         return (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={pulseStyle}></div>
-              <h3 style={{ ...titleStyle, marginBottom: 0 }}>Sessão Ativa</h3>
-            </div>
-            <div style={{
-              padding: '16px',
-              backgroundColor: 'rgba(255, 255, 255, 0.5)',
-              borderRadius: '16px',
-              minHeight: '80px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-            }}>
-              {interimTranscript ? (
-                <p style={{
-                  fontSize: '14px',
-                  color: '#2C2420',
-                  margin: 0,
-                  fontStyle: 'italic',
-                  lineHeight: '1.5'
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {/* History Mode Banner */}
+            {isHistoryMode && (
+              <div style={{
+                background: 'linear-gradient(90deg, #F4A900 0%, #FFD200 100%)',
+                padding: '16px 24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderBottom: '1px solid rgba(0,0,0,0.05)',
+                boxShadow: '0 4px 12px rgba(244, 169, 0, 0.2)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div className="recording-dot"></div>
+                  <span style={{ 
+                    fontSize: '12px', 
+                    fontWeight: '900', 
+                    color: '#2C2420', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.15em',
+                    textShadow: '0 1px 0 rgba(255,255,255,0.3)'
+                  }}>
+                    História Ativa
+                  </span>
+                </div>
+                <div style={{
+                  backgroundColor: '#2C2420',
+                  color: '#F4A900',
+                  fontSize: '15px',
+                  fontWeight: '900',
+                  padding: '6px 12px',
+                  borderRadius: '10px',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  minWidth: '60px',
+                  textAlign: 'center',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
                 }}>
-                  "{interimTranscript}..."
-                </p>
-              ) : (
-                <p style={{ fontSize: '13px', color: '#9D8977', margin: 0 }}>Capto áudio em tempo real...</p>
-              )}
-            </div>
-            <div style={{ marginTop: '16px' }}>
-              <MicStatus status="active" />
+                  {formatTime(elapsedTime)}
+                </div>
+              </div>
+            )}
+
+            <div style={{ padding: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  {!isHistoryMode && <div style={pulseStyle}></div>}
+                  <h3 style={{ ...titleStyle, marginBottom: 0, fontSize: isHistoryMode ? '16px' : '20px' }}>
+                    {isHistoryMode ? 'SUA NARRATIVA' : 'Sessão Ativa'}
+                  </h3>
+                </div>
+                {status === 'recording' && (
+                   <span style={{ 
+                     fontSize: '9px', 
+                     backgroundColor: isHistoryMode ? '#2C2420' : '#F4A900',
+                     color: isHistoryMode ? '#F4A900' : '#2C2420',
+                     padding: '2px 8px',
+                     borderRadius: '4px',
+                     fontWeight: '900',
+                     letterSpacing: '0.05em'
+                   }}>LIVE</span>
+                )}
+              </div>
+              
+              <div style={{
+                padding: '24px',
+                backgroundColor: isHistoryMode ? '#FFFFFF' : '#FDFBF7',
+                borderRadius: '24px',
+                minHeight: '140px',
+                boxShadow: isHistoryMode 
+                    ? '0 10px 30px rgba(244, 169, 0, 0.1), inset 0 2px 4px rgba(0,0,0,0.02)' 
+                    : '0 8px 24px rgba(0,0,0,0.04)',
+                border: isHistoryMode ? '2px solid #F4A900' : '1px solid #EDE0D0',
+                marginBottom: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: interimTranscript ? 'flex-start' : 'center',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                {interimTranscript ? (
+                  <p style={{
+                    fontSize: '17px',
+                    color: '#2C2420',
+                    margin: 0,
+                    lineHeight: '1.6',
+                    fontWeight: '500',
+                    fontStyle: isHistoryMode ? 'normal' : 'italic'
+                  }}>
+                    {interimTranscript}
+                  </p>
+                ) : (
+                  <p style={{ fontSize: '15px', color: '#A09088', margin: 0, textAlign: 'center', fontWeight: '500' }}>
+                    {isHistoryMode ? 'Fale para iniciar sua história...' : 'Ouvindo áudio...'}
+                  </p>
+                )}
+                
+                {interimTranscript && isHistoryMode && (
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '12px',
+                        right: '12px',
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        backgroundColor: '#F4A900',
+                        opacity: 0.6
+                    }}></div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <MicStatus status="active" />
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: '800', 
+                  color: isHistoryMode ? '#F4A900' : '#8C7B72', 
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em'
+                }}>
+                  {status === 'recording' ? 'Microfone Ativo' : 'Aguardando'}
+                </span>
+              </div>
             </div>
           </div>
         );
 
       case 'paused':
         return (
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ textAlign: 'center', padding: '24px' }}>
             <div style={{ fontSize: '32px', marginBottom: '16px' }}>⏸️</div>
             <h3 style={titleStyle}>Sessão Pausada</h3>
-            <p style={textStyle}>O professor pausou a transcrição momentaneamente.</p>
+            <p style={textStyle}>O professor pausou a atividade momentaneamente.</p>
             <MicStatus status="paused" />
           </div>
         );
 
       case 'ended':
         return (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', marginBottom: '16px' }}>🎓</div>
+          <div style={{ textAlign: 'center', padding: '24px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '24px' }}>🎓</div>
             <h3 style={titleStyle}>Sessão Finalizada</h3>
-            <p style={textStyle}>Resumo e notas estarão disponíveis em breve.</p>
+            <p style={textStyle}>Excelente participação! Seus dados foram salvos para análise posterior.</p>
             <button
               style={buttonStyle}
-              onClick={() => setStatus('idle')}
+              onClick={() => setStatus('waiting')}
             >
               Voltar ao Início
             </button>
@@ -541,12 +697,85 @@ const FloatingPanel: React.FC = () => {
   };
 
   return (
-    <div style={panelStyle} className="polyglan-floating-panel">
+    <div style={panelStyle} className={`polyglan-floating-panel ${isHistoryMode && status === 'recording' ? 'history-mode' : ''}`}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap');
         
         .polyglan-floating-panel {
           font-family: 'Outfit', sans-serif;
+        }
+
+        .history-mode {
+          animation: history-glow 3s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .recording-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background-color: #2C2420;
+          box-shadow: 0 0 0 rgba(44, 36, 32, 0.4);
+          animation: dot-pulse 1.5s infinite;
+        }
+
+        @keyframes dot-pulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(44, 36, 32, 0.7);
+          }
+          70% {
+            box-shadow: 0 0 0 10px rgba(44, 36, 32, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(44, 36, 32, 0);
+          }
+        }
+
+        @keyframes history-glow {
+          0% {
+            box-shadow: 0 20px 50px rgba(244, 169, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+          }
+          50% {
+            box-shadow: 0 20px 70px rgba(244, 169, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+          }
+          100% {
+            box-shadow: 0 20px 50px rgba(244, 169, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+          }
+        }
+
+        .lds-ring {
+          display: inline-block;
+          position: relative;
+          width: 64px;
+          height: 64px;
+        }
+        .lds-ring div {
+          box-sizing: border-box;
+          display: block;
+          position: absolute;
+          width: 51px;
+          height: 51px;
+          margin: 6px;
+          border: 6px solid #F4A900;
+          border-radius: 50%;
+          animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+          border-color: #F4A900 transparent transparent transparent;
+        }
+        .lds-ring div:nth-child(1) {
+          animation-delay: -0.45s;
+        }
+        .lds-ring div:nth-child(2) {
+          animation-delay: -0.3s;
+        }
+        .lds-ring div:nth-child(3) {
+          animation-delay: -0.15s;
+        }
+        @keyframes lds-ring {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
 
         @keyframes pulse {
@@ -555,8 +784,8 @@ const FloatingPanel: React.FC = () => {
             box-shadow: 0 0 0 0 rgba(193, 102, 107, 0.7);
           }
           70% {
-            transform: scale(1.1);
-            box-shadow: 0 0 0 10px rgba(193, 102, 107, 0);
+            transform: scale(1.2);
+            box-shadow: 0 0 0 12px rgba(193, 102, 107, 0);
           }
           100% {
             transform: scale(1);

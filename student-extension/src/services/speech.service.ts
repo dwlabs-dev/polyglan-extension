@@ -23,9 +23,10 @@ class SpeechService {
 
     this.error = null;
     this.recognition.lang = lang;
+    let explicitStop = false;
 
     this.recognition.onstart = () => {
-      console.log('Speech recognition started');
+      console.log('[SpeechService] Recognition started');
     };
 
     this.recognition.onresult = (event: any) => {
@@ -40,57 +41,67 @@ class SpeechService {
     };
 
     this.recognition.onerror = (event: any) => {
-      console.log('Speech recognition error:', event.error);
+      console.warn('[SpeechService] Error:', event.error);
       if (event.error === 'not-allowed') {
         this.error = 'mic-denied';
-      } else if (event.error === 'no-speech') {
-        this.error = 'no-speech';
-      } else if (event.error === 'audio-capture') {
-        this.error = 'audio-capture';
       } else if (event.error === 'network') {
         this.error = 'network';
       }
     };
 
     this.recognition.onend = () => {
-      console.log('Speech recognition ended');
+      console.log('[SpeechService] Recognition ended');
+      // Auto-restart if not explicitly stopped
+      if (!explicitStop) {
+        console.log('[SpeechService] Auto-restarting...');
+        try {
+          this.recognition.start();
+        } catch (e) {
+          console.error('[SpeechService] Restart failed:', e);
+        }
+      }
     };
 
-    this.recognition.start();
+    // Override stop to prevent auto-restart
+    const originalStop = this.recognition.stop.bind(this.recognition);
+    this.stop = () => {
+        explicitStop = true;
+        originalStop();
+        console.log('[SpeechService] Explicitly stopped');
+    };
+
+    try {
+      this.recognition.start();
+    } catch (e) {
+      console.error('[SpeechService] Initial start failed:', e);
+    }
   }
 
   pause(): void {
-    if (!this.recognition) return;
-    try {
-      this.recognition.stop();
-      console.log('[SpeechService] Recognition paused');
-    } catch (e) {
-      console.warn('[SpeechService] Error pausing:', e);
+    if (this.recognition) {
+       try {
+         this.recognition.stop();
+         console.log('[SpeechService] Paused');
+       } catch (e) {
+         console.warn('[SpeechService] Pause failed', e);
+       }
     }
   }
 
   resume(): void {
-    if (!this.recognition) return;
-    try {
-      this.recognition.start();
-      console.log('[SpeechService] Recognition resumed');
-    } catch (e) {
-      console.warn('[SpeechService] Error resuming:', e);
+    if (this.recognition) {
+        try {
+          this.recognition.start();
+          console.log('[SpeechService] Resumed');
+        } catch (e) {
+          console.warn('[SpeechService] Resume failed', e);
+        }
     }
   }
 
   stop(): void {
-    if (!this.recognition) return;
-    try {
-      this.recognition.onstart = null;
-      this.recognition.onresult = null;
-      this.recognition.onerror = null;
-      this.recognition.onend = null;
-      this.recognition.stop();
-      console.log('[SpeechService] Recognition stopped and handlers cleared');
-    } catch (e) {
-      console.warn('[SpeechService] Error stopping:', e);
-    }
+    // This will be overridden in start()
+    if (this.recognition) this.recognition.stop();
   }
 
   getError(): string | null {

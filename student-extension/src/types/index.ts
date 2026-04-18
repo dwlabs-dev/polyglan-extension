@@ -1,5 +1,5 @@
 export type SupportedLang = 'en-US' | 'pt-BR';
-export type SessionMode = 'DEBATE' | 'HISTORIA' | null;
+export type SessionMode = 'DEBATE' | 'HISTORIA' | 'HISTORY' | null;
 export type SessionStatus = 'idle' | 'waiting' | 'recording' | 'paused' | 'ended';
 export type SessionCommand = 'START' | 'PAUSE' | 'STOP' | 'SWITCH_SPEAKER';
 

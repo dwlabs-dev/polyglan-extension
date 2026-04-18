@@ -19,15 +19,17 @@ app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = [
       'https://meet.google.com',
+      'https://show-separate-mutual-cingular.trycloudflare.com',
       'https://hoped-newspaper-rolls-chuck.trycloudflare.com',
-      'https://administration-roy-huge-signed.trycloudflare.com'
+      'https://administration-roy-huge-signed.trycloudflare.com',
+      'https://linked-pamela-queries-records.trycloudflare.com'
     ];
-    
+
     // Allow extensions (no origin context) or explicitly allowed origins
     if (!origin || allowedOrigins.some(ao => origin.startsWith(ao))) {
       callback(null, true);
     } else {
-      console.warn(`[CORS] Request from blocked origin: ${origin}`);
+      console.warn(`[CORS] REJECTED origin: ${origin} (Not in allowed list)`);
       callback(null, true); // Still allow for now in development, but log it
     }
   },
