@@ -7,7 +7,6 @@
     "storage",
     "activeTab",
     "identity",
-    "tabCapture",
     "offscreen"
   ],
   "host_permissions": [
@@ -39,7 +38,6 @@
     }
   ],
   "action": {
-    "default_title": "Polyglan Student",
-    "default_popup": "popup/popup.html"
+    "default_title": "Polyglan Student"
   }
 }

@@ -105,6 +105,16 @@ export function getSession(sessionId: string): SessionData | undefined {
 }
 
 /**
+ * Gets session data by meeting code
+ */
+export function getSessionByCode(sessionCode: string): SessionData | undefined {
+  for (const session of sessions.values()) {
+    if (session.sessionCode === sessionCode) return session;
+  }
+  return undefined;
+}
+
+/**
  * Sets session mode
  */
 export function setSessionMode(sessionId: string, mode: string | null, modeSegmentId: string | null): void {

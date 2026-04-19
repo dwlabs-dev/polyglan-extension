@@ -3,6 +3,7 @@ import { authService } from '../services/auth.service';
 import { speechService } from '../services/speech.service';
 import { socketService } from '../services/socket.service';
 import { SessionMode, WsMessage, SupportedLang } from '../types/index';
+import { audioCaptureService } from '../services/audioCapture.service';
 import MicStatus from './MicStatus';
 import FeedbackPanel from './FeedbackPanel';
 
@@ -52,8 +53,6 @@ const FloatingPanel: React.FC = () => {
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
-  const [audioCaptureStatus, setAudioCaptureStatus] = useState<AudioCaptureStatus>('inactive');
-  const [audioError, setAudioError] = useState<string | null>(null);
 
   // Extract meeting code from URL
   const getMeetingCode = () => {
@@ -111,17 +110,7 @@ const FloatingPanel: React.FC = () => {
 
     init();
 
-    // Listener for audio capture status from service worker
-    const messageListener = (message: any) => {
-      if (message.type === 'CAPTURE_STATUS') {
-        console.log(`[FloatingPanel] Audio capture status update: ${message.status}`);
-        setAudioCaptureStatus(message.status);
-        if (message.error) setAudioError(message.error);
-      }
-    };
-
-    chrome.runtime.onMessage.addListener(messageListener);
-    return () => chrome.runtime.onMessage.removeListener(messageListener);
+    // Removemos os handlers do popup/service worker mudo
   }, []);
 
   const handleGoogleLogin = async () => {
@@ -242,13 +231,22 @@ const FloatingPanel: React.FC = () => {
               setInterimTranscript('');
             }
           });
+
+          // INICIA GRAVAÇÃO DIRETO DO MICROFONE OBTENDO HERANÇA DO GOOGLE MEET
+          const capturedSid = stateRef.current.sessionId;
+          const capturedStid = stateRef.current.studentId;
+          if (capturedSid && capturedStid) {
+              audioCaptureService.start(capturedSid, capturedStid);
+          }
         } else if (command === 'PAUSE') {
           console.log(`[FloatingPanel] PAUSE command received`);
           speechService.pause();
+          audioCaptureService.stop();
           setStatus('paused');
         } else if (command === 'STOP') {
           console.log(`[FloatingPanel] STOP command received`);
           speechService.stop();
+          audioCaptureService.stop();
           setInterimTranscript('');
           setMode(null);
           setModeSegmentId(null);
@@ -618,26 +616,6 @@ const FloatingPanel: React.FC = () => {
                 )}
               </div>
 
-              {/* GESTURE PROMPT: Required in MV3 for tabCapture */}
-              {audioCaptureStatus === 'needs-gesture' && (
-                <div style={{
-                  padding: '16px',
-                  backgroundColor: '#FFF1F1',
-                  border: '1px solid #FFD1D1',
-                  borderRadius: '16px',
-                  marginBottom: '20px',
-                  textAlign: 'center',
-                  animation: 'shake 0.5s ease-in-out'
-                }}>
-                  <p style={{ ...textStyle, fontSize: '13px', marginBottom: '12px', color: '#B3261E', fontWeight: 'bold' }}>
-                    ⚠️ AUDIO DESCONECTADO
-                  </p>
-                  <p style={{ ...textStyle, fontSize: '12px', marginBottom: '0' }}>
-                    Clique no <strong>ícone da Polyglan</strong> acima e depois em <strong>CONECTAR ÁUDIO</strong> para autorizar o som.
-                  </p>
-                </div>
-              )}
-              
               <div style={{
                 padding: '24px',
                 backgroundColor: isHistoryMode ? '#FFFFFF' : '#FDFBF7',

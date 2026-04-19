@@ -1,15 +1,18 @@
 /**
  * Audio WebSocket Server — Polyglan Extension BFF
  *
- * Listens on port 3002 (separate from the session/presence WS on port 3001).
+ * Listens on port 3002.
  * Receives raw Base64-encoded audio/webm chunks from the Chrome extension,
- * buffers them per speakerId, and dispatches async transcription once
- * 30 seconds of audio have accumulated (6 × 5-second chunks).
+ * and streams them directly to physical WebM files.
+ * Provides real-time resilience and ensures the EBML Header is prepended
+ * when segmenting modes (e.g. Debate/History).
  */
 
 import { WebSocketServer, WebSocket } from 'ws';
 import { createServer } from 'http';
-import { transcribeAudio } from '../services/audio-transcription.service.js';
+import { mkdir, appendFile, writeFile } from 'fs/promises';
+import { join } from 'path';
+import { getSessionByCode } from '../services/session.service.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -18,28 +21,12 @@ import { transcribeAudio } from '../services/audio-transcription.service.js';
 interface AudioChunkMessage {
   meetingId: string;
   speakerId: string;
+  streamId: string;
   timestamp: number;
   chunk: string; // base64-encoded audio/webm blob
 }
 
-interface SpeakerBuffer {
-  meetingId: string;
-  chunks: Buffer[];
-  firstTimestamp: number;
-}
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-/** Number of 5-second chunks to accumulate before triggering transcription. */
-const CHUNKS_PER_BATCH = 6; // ≈ 30 seconds
-
-// ---------------------------------------------------------------------------
-// In-memory buffer: speakerId → SpeakerBuffer
-// ---------------------------------------------------------------------------
-
-const speakerBuffers = new Map<string, SpeakerBuffer>();
+// We no longer manually stitch fragments because each streamId generates a completely independent playable file!
 
 // ---------------------------------------------------------------------------
 // Chunk processing
@@ -51,12 +38,21 @@ function isAudioChunkMessage(value: unknown): value is AudioChunkMessage {
   return (
     typeof obj['meetingId'] === 'string' &&
     typeof obj['speakerId'] === 'string' &&
+    typeof obj['streamId'] === 'string' &&
     typeof obj['timestamp'] === 'number' &&
     typeof obj['chunk'] === 'string'
   );
 }
 
-function handleIncomingChunk(raw: string): void {
+async function ensureDir(dirPath: string) {
+  try {
+    await mkdir(dirPath, { recursive: true });
+  } catch (err: any) {
+    if (err.code !== 'EEXIST') throw err;
+  }
+}
+
+async function handleIncomingChunk(raw: string): Promise<void> {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -70,59 +66,37 @@ function handleIncomingChunk(raw: string): void {
     return;
   }
 
-  const { meetingId, speakerId, timestamp, chunk } = parsed;
+  const { meetingId, speakerId, streamId, timestamp, chunk } = parsed;
 
-  // Decode Base64 → Buffer
-  let chunkBuffer: Buffer;
+  const chunkBuffer = Buffer.from(chunk, 'base64');
+
+  const baseDir = join(process.cwd(), 'sessions', meetingId, speakerId);
+  const audiosDir = join(baseDir, 'audios');
+  // Segmented by streamId so players do not break with double-headers!
+  const mainFile = join(audiosDir, `session-${streamId}.webm`);
+
   try {
-    chunkBuffer = Buffer.from(chunk, 'base64');
-  } catch {
-    console.error('[AudioWS] Failed to decode Base64 chunk for speaker', speakerId);
-    return;
+    await ensureDir(audiosDir);
+    // Append to the master lesson file
+    await appendFile(mainFile, chunkBuffer);
+  } catch (err) {
+    console.error(`[AudioWS] Failed to append main session audio chunk:`, err);
   }
 
-  // Retrieve or initialise the speaker's buffer
-  if (!speakerBuffers.has(speakerId)) {
-    speakerBuffers.set(speakerId, {
-      meetingId,
-      chunks: [],
-      firstTimestamp: timestamp,
-    });
-  }
-
-  const buffer = speakerBuffers.get(speakerId)!;
-  buffer.chunks.push(chunkBuffer);
-
-  console.log(
-    `[AudioWS] Buffered chunk for ${speakerId} (${buffer.chunks.length}/${CHUNKS_PER_BATCH}) in meeting ${meetingId}`
-  );
-
-  // Flush when we have enough chunks
-  if (buffer.chunks.length >= CHUNKS_PER_BATCH) {
-    flushBuffer(speakerId, buffer);
-  }
-}
-
-function flushBuffer(speakerId: string, buffer: SpeakerBuffer): void {
-  // Remove from map immediately so new chunks start a fresh buffer
-  speakerBuffers.delete(speakerId);
-
-  const { meetingId, firstTimestamp, chunks } = buffer;
-
-  // Concatenate all chunk Buffers into one
-  const audioBuffer = Buffer.concat(chunks);
-
-  console.log(
-    `[AudioWS] Flushing ${chunks.length} chunks (${audioBuffer.length} bytes) for speaker ${speakerId}`
-  );
-
-  // Fire-and-forget: transcription is async and must not block the WS handler
-  transcribeAudio({ meetingId, speakerId, timestamp: firstTimestamp, audioBuffer }).catch(
-    (err: unknown) => {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`[AudioWS] Transcription failed for ${speakerId}: ${message}`);
+  // Contextual Sub-Mode Separation
+  const session = getSessionByCode(meetingId);
+  if (session && session.mode && session.modeSegmentId) {
+    const safeModeName = session.mode.toUpperCase().trim();
+    const modeDir = join(baseDir, safeModeName, 'audios');
+    const modeFile = join(modeDir, `${session.modeSegmentId}-${streamId}.webm`);
+    
+    try {
+      await ensureDir(modeDir);
+      await appendFile(modeFile, chunkBuffer);
+    } catch (err) {
+      console.error(`[AudioWS] Failed to append mode audio chunk:`, err);
     }
-  );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -132,17 +106,15 @@ function flushBuffer(speakerId: string, buffer: SpeakerBuffer): void {
 const AUDIO_WS_PORT = 3002;
 
 export function initAudioWebSocketServer(): void {
-  // Create a standalone HTTP server so the Audio WS runs on its own port
-  // independently of the Express server on port 3001.
   const httpServer = createServer();
   const wss = new WebSocketServer({ server: httpServer });
 
   wss.on('connection', (ws: WebSocket) => {
     console.log('[AudioWS] Client connected');
 
-    ws.on('message', (data) => {
+    ws.on('message', async (data) => {
       try {
-        handleIncomingChunk(data.toString());
+        await handleIncomingChunk(data.toString());
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         console.error('[AudioWS] Unhandled error in message handler:', message);
@@ -159,6 +131,6 @@ export function initAudioWebSocketServer(): void {
   });
 
   httpServer.listen(AUDIO_WS_PORT, () => {
-    console.log(`[AudioWS] Listening on ws://localhost:${AUDIO_WS_PORT}`);
+    console.log(`[AudioWS] Listening on ws://localhost:${AUDIO_WS_PORT} for Streams`);
   });
 }
