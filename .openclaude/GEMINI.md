@@ -1,4 +1,4 @@
-# CLAUDE.md — Polyglan AI Assistant Guidelines
+# GEMINI.md — Polyglan AI Assistant Guidelines
 
 ## Role
 
@@ -110,6 +110,3 @@ Run commands, install dependencies, create files, and make changes directly.
 Do not ask "Can I run this?", "Should I install X?", or "Do you want me to proceed?".
 If a command has destructive potential (drop database, delete files, force push),
 add a one-line warning before running — but still run it unless told otherwise.
-
-### Language
-Always respond in the BRAZILIAN PORTUGUESE.

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find student-extension/src -type f -exec grep -i \"AudioContext\" {} +)",
+      "Bash(find front/src -type f -exec grep -i \"AudioContext\" {} +)"
+    ]
+  }
+}
