@@ -17,7 +17,7 @@ function App() {
       try {
         const session = await getMeetSession();
 
-        await session.createCoActivityClient({
+        await (session as any).createCoActivityClient({
           onCoActivityStateChanged: (state: CoActivityState) => {
             console.log('[Add-on] Co-activity state changed:', state);
             if (state.debateStarted) {
@@ -50,7 +50,7 @@ function App() {
 
       // 2. Sincronizar via SDK para todos os participantes
       const session = await getMeetSession();
-      await session.createCoActivityClient({});
+      await (session as any).createCoActivityClient({});
 
       setStatus('Sincronização enviada para todos!');
       setIsDebateActive(true);

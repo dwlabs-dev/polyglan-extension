@@ -6,25 +6,25 @@ class SocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
   private reconnectDelay = 1000;
-  private reconnectTimer: number | null = null;
+  private reconnectTimer: any = null;
   private currentSessionId: string | null = null;
   private currentUserId: string | null = null;
   private currentUserName: string | null = null;
 
   private intentionalClose = false;
 
-  connect(sessionId: string, userId: string, userName?: string): void {
+  connect(sessionId: string, userId: string, userName?: string, protocol: 'http' | 'https' = 'https'): void {
     this.currentSessionId = sessionId;
     this.currentUserId = userId;
     this.currentUserName = userName || null;
     this.intentionalClose = false;
 
-    const wsBaseUrl = import.meta.env.VITE_WS_URL;
+    const wsBaseUrl = (import.meta.env.VITE_WS_URL as string) || 'ws://localhost:3002';
     // Ensure the URL ends with /ws and append sessionId as query param
     let wsUrl = wsBaseUrl.endsWith('/ws') ? wsBaseUrl : `${wsBaseUrl.replace(/\/$/, '')}/ws`;
 
-    // Enforce WSS if on an HTTPS page (Google Meet requirement)
-    if (window.location.protocol === 'https:' && wsUrl.startsWith('ws://')) {
+    // Enforce WSS if protocol is https
+    if (protocol === 'https' && wsUrl.startsWith('ws://')) {
       wsUrl = wsUrl.replace('ws://', 'wss://');
     }
 
@@ -104,11 +104,17 @@ class SocketService {
       `Reconnecting in ${this.reconnectDelay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
     );
 
-    this.reconnectTimer = window.setTimeout(() => {
+    const timerFunc = () => {
       if (this.currentSessionId && this.currentUserId) {
         this.connect(this.currentSessionId, this.currentUserId, this.currentUserName || undefined);
       }
-    }, this.reconnectDelay);
+    };
+
+    if (typeof setTimeout !== 'undefined') {
+      this.reconnectTimer = setTimeout(timerFunc, this.reconnectDelay);
+    } else {
+      this.reconnectTimer = setInterval(timerFunc, this.reconnectDelay);
+    }
   }
 
   send(message: WsMessage): void {
@@ -129,7 +135,11 @@ class SocketService {
     this.currentUserName = null;
 
     if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
+      if (typeof clearTimeout !== 'undefined') {
+        clearTimeout(this.reconnectTimer);
+      } else if (typeof window !== 'undefined' && (window as any).clearTimeout) {
+        (window as any).clearTimeout(this.reconnectTimer);
+      }
       this.reconnectTimer = null;
     }
 

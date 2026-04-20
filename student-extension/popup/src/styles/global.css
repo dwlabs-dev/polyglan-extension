@@ -1,0 +1,23 @@
+:root {
+  --amber: #F4A900;
+  --dark-brown: #2C2420;
+  --warm-grey: #5D5048;
+  --bg-light: #FDFBF7;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--dark-brown);
+  color: white;
+  font-family: 'Outfit', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}

@@ -53,6 +53,7 @@ const FloatingPanel: React.FC = () => {
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [needsGesture, setNeedsGesture] = useState(false);
 
   // Extract meeting code from URL
   const getMeetingCode = () => {

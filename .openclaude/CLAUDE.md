@@ -113,3 +113,14 @@ add a one-line warning before running — but still run it unless told otherwise
 
 ### Language
 Always respond in the BRAZILIAN PORTUGUESE.
+
+### Pre-Finish
+Always before finishing the task, always run the following commands:
+
+```bash
+# Run all builds
+npm run build
+
+# Run all dev servers
+npm run dev
+```

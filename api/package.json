@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "npx tsx watch src/server.ts",
-    "start": "npx tsx src/server.ts"
+    "start": "npx tsx src/server.ts",
+    "build": "tsc"
   },
   "dependencies": {
     "@google-apps/meet": "^0.7.1",

@@ -1,29 +1,106 @@
 /**
  * Service Worker for Polyglan Student Extension (Manifest V3)
  *
- * Responsibilities:
+ * Responsabilities:
  * 1. Handle Google OAuth authentication.
  * 2. Manage Audio Capture via Offscreen Document & WebSocket.
+ * 3. Orchestrate session state and synchronize it with the Popup UI.
  */
 
+import {
+  WsMessage,
+  SessionMode,
+  SessionStatus,
+  SupportedLang
+} from '../src/types/index';
+import { socketService } from '../src/services/socket.service';
+
 // ---------------------------------------------------------------------------
-// Types
+// Types & Interfaces
 // ---------------------------------------------------------------------------
 
-interface AuthMessage {
-  action: 'authenticateWithGoogle' | 'ping';
+interface Feedback {
+  id: string;
+  text: string;
+  level: 'info' | 'warning' | 'success';
+  timestamp: number;
 }
 
-interface AudioMessage {
-  type: 'START_RECORDING' | 'STOP_RECORDING' | 'AUDIO_CHUNK' | 'OFFSCREEN_READY' | 'RECORDING_ERROR';
-  meetingId?: string;
-  speakerId?: string;
-  chunk?: string;
-  error?: string;
+interface SessionState {
+  status: SessionStatus;
+  mode: SessionMode;
+  modeSegmentId: string | null;
+  studentId: string | null;
+  sessionId: string | null;
+  userName: string | null;
+  googleEmail: string | null;
+  lang: SupportedLang;
+  interimTranscript: string;
+  feedbackMessages: Feedback[];
 }
 
 // ---------------------------------------------------------------------------
-// Audio WebSocket Manager
+// Session State Manager
+// ---------------------------------------------------------------------------
+
+class SessionStateManager {
+  private state: SessionState = {
+    status: 'idle',
+    mode: null,
+    modeSegmentId: null,
+    studentId: null,
+    sessionId: null,
+    userName: null,
+    googleEmail: null,
+    lang: 'pt-BR',
+    interimTranscript: '',
+    feedbackMessages: []
+  };
+
+  constructor() {}
+
+  public getState(): SessionState {
+    return { ...this.state };
+  }
+
+  public updateState(updates: Partial<SessionState>): void {
+    this.state = { ...this.state, ...updates };
+    this.notifySubscribers();
+  }
+
+  public addFeedback(text: string, level: 'info' | 'warning' | 'success'): void {
+    const newFeedback: Feedback = {
+      id: `${Date.now()}-${Math.random()}`,
+      text,
+      level,
+      timestamp: Date.now()
+    };
+
+    const updatedFeedback = [...this.state.feedbackMessages, newFeedback];
+    this.updateState({ feedbackMessages: updatedFeedback });
+
+    // Auto-remove feedback after 10s
+    setTimeout(() => {
+      const filtered = this.state.feedbackMessages.filter(f => f.id !== newFeedback.id);
+      this.updateState({ feedbackMessages: filtered });
+    }, 10000);
+  }
+
+  private notifySubscribers(): void {
+    // Notify all listeners of the state change
+    chrome.runtime.sendMessage({
+      type: 'SESSION_STATE_UPDATED',
+      payload: this.state
+    }).catch(() => {
+      // Ignore errors if no one is listening (e.g. popup is closed)
+    });
+  }
+}
+
+const sessionManager = new SessionStateManager();
+
+// ---------------------------------------------------------------------------
+// Audio WebSocket Manager (Refactored to use SessionManager)
 // ---------------------------------------------------------------------------
 
 class AudioWebSocketManager {
@@ -31,31 +108,11 @@ class AudioWebSocketManager {
   private meetingId: string | null = null;
   private speakerId: string | null = null;
   private streamId: string | null = null;
-  private reconnectTimer: number | null = null;
+  private reconnectTimer: any = null;
   private isConnecting: boolean = false;
 
-  constructor() {}
-
   private getWsUrl(): string {
-    // Using the same logic as before to derive the audio port (3002) from the API URL (3001)
-    // Note: In a real production build, we'd ideally use a dedicated env var.
-    // For now, we rely on the same replacement logic used in the frontend.
-
-    // We use a fallback for development/local testing.
     let wsUrl = 'ws://localhost:3002';
-
-    // If we were in a bundled environment where import.meta.env is available:
-    // const baseWsUrl = (import.meta.env.VITE_WS_URL as string).replace('3001/ws', '3002').replace('3001', '3002').replace('/ws', '');
-    // wsUrl = baseWsUrl.startsWith('http') ? baseWsUrl.replace('http', 'ws') : baseWsUrl;
-    // if (window.location.protocol === 'https:' && wsUrl.startsWith('ws://') && !wsUrl.includes('localhost')) {
-    //    wsUrl = wsUrl.replace('ws://', 'wss://');
-    // }
-
-    // However, since we are in a Service Worker, we don't have access to 'window'.
-    // We'll assume that if it's not localhost, it should be wss.
-    // For this implementation, I'll use a more robust way if possible,
-    // but for now I'll stick to the known working logic.
-
     return wsUrl;
   }
 
@@ -86,8 +143,6 @@ class AudioWebSocketManager {
         console.warn('[ServiceWorker] Audio WebSocket closed');
         this.socket = null;
         this.isConnecting = false;
-        // Reconnect logic if we are still supposed to be recording
-        // We'll check this in the next message or via a state flag
       };
 
       this.socket.onerror = (err) => {
@@ -117,8 +172,6 @@ class AudioWebSocketManager {
           chunk: chunk
         })
       );
-    } else {
-      console.warn('[ServiceWorker] Cannot send chunk: WebSocket not open or missing metadata.');
     }
   }
 
@@ -135,10 +188,25 @@ class AudioWebSocketManager {
 }
 
 const audioWSManager = new AudioWebSocketManager();
-let isRecording = false;
+
+// Promise resolver for waiting for offscreen document to be ready
+let offscreenReadyResolver: ((value: void) => void) | null = null;
+
+async function waitForOffscreenReady(timeoutMs = 5000): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    offscreenReadyResolver = resolve;
+
+    setTimeout(() => {
+      if (offscreenReadyResolver) {
+        offscreenReadyResolver = null;
+        reject(new Error(`Timeout waiting for offscreen document to be ready after ${timeoutMs}ms`));
+      }
+    }, timeoutMs);
+  });
+}
 
 // ---------------------------------------------------------------------------
-// Message router
+// Message Router
 // ---------------------------------------------------------------------------
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -146,13 +214,16 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((request: any, sender, sendResponse) => {
-  const authRequest = request as AuthMessage;
-
   // --- Auth logic ---
-  if (authRequest.action === 'authenticateWithGoogle') {
+  if (request.action === 'authenticateWithGoogle') {
     authenticateWithGoogle()
       .then((result) => {
         console.log('[ServiceWorker] Authentication successful');
+        sessionManager.updateState({
+          status: 'waiting',
+          googleEmail: result.email,
+          userName: result.name
+        });
         sendResponse({ success: true, data: result });
       })
       .catch((error: unknown) => {
@@ -163,37 +234,45 @@ chrome.runtime.onMessage.addListener((request: any, sender, sendResponse) => {
     return true;
   }
 
-  if (authRequest.action === 'ping') {
+  if (request.action === 'ping') {
     sendResponse({ success: true, pong: true });
     return false;
   }
 
-  // --- Audio Capture logic ---
-  const audioRequest = request as AudioMessage;
-
-  if (audioRequest.type === 'START_RECORDING') {
-    handleStartRecording(audioRequest.meetingId!, audioRequest.speakerId!);
-    return false; // Async handling
+  // --- State synchronization logic ---
+  if (request.action === 'GET_STATE') {
+    sendResponse(sessionManager.getState());
+    return false;
   }
 
-  if (audioRequest.type === 'STOP_RECORDING') {
+  // --- Audio Capture logic ---
+  if (request.type === 'START_RECORDING') {
+    handleStartRecording(request.meetingId!, request.speakerId!);
+    return false;
+  }
+
+  if (request.type === 'STOP_RECORDING') {
     handleStopRecording();
     return false;
   }
 
-  if (audioRequest.type === 'AUDIO_CHUNK') {
-    handleAudioChunk(audioRequest.chunk!);
+  if (request.type === 'AUDIO_CHUNK') {
+    handleAudioChunk(request.chunk!);
     return false;
   }
 
-  if (audioRequest.type === 'OFFSCREEN_READY') {
+  if (request.type === 'OFFSCREEN_READY') {
     console.log('[ServiceWorker] Offscreen document is ready.');
+    if (offscreenReadyResolver) {
+      offscreenReadyResolver();
+      offscreenReadyResolver = null;
+    }
     return false;
   }
 
-  if (audioRequest.type === 'RECORDING_ERROR') {
-    console.error('[ServiceWorker] Recording error from offscreen:', audioRequest.error);
-    isRecording = false;
+  if (request.type === 'RECORDING_ERROR') {
+    console.error('[ServiceWorker] Recording error from offscreen:', request.error);
+    sessionManager.updateState({ status: 'idle' });
     return false;
   }
 
@@ -203,37 +282,54 @@ chrome.runtime.onMessage.addListener((request: any, sender, sendResponse) => {
 // --- Audio Handlers ---
 
 async function handleStartRecording(meetingId: string, speakerId: string) {
-  if (isRecording) {
+  const currentState = sessionManager.getState();
+  if (currentState.status === 'recording') {
     console.warn('[ServiceWorker] Already recording.');
     return;
   }
 
   console.log(`[ServiceWorker] Starting recording session for ${meetingId}/${speakerId}...`);
-  isRecording = true;
+  sessionManager.updateState({ status: 'recording' });
 
   try {
-    // 1. Create Offscreen Document
-    // We use 'reinstall: true' to ensure we have a fresh instance if one was left hanging
-    await chrome.offscreen.createDocument({
-      url: 'offscreen/offscreen.html',
-      reinstall: true
+    // 1. Create Offscreen Document securely
+    const hasDoc = await chrome.offscreen.hasDocument();
+    if (!hasDoc) {
+      await chrome.offscreen.createDocument({
+        url: 'offscreen/offscreen.html',
+        reasons: [chrome.offscreen.Reason.USER_MEDIA],
+        justification: 'Capturing microphone for Polyglan AI'
+      });
+    }
+
+    // 2. Wait for the offscreen document to signal it is ready
+    await waitForOffscreenReady();
+
+    // 3. Connect to WebSocket
+    await socketService.connect(meetingId, speakerId, currentState.userName || undefined);
+
+    // Attach listener for socket messages to update session state (transcriptions, commands)
+    socketService.onMessage((message: WsMessage) => {
+        handleSocketMessage(message);
     });
 
-    // 2. Connect to WebSocket
-    await audioWSManager.connect(meetingId, speakerId);
+    // 4. Tell the offscreen document to start recording
+    chrome.runtime.sendMessage({ type: 'START_RECORDING' });
+    console.log('[ServiceWorker] Sent START_RECORDING to offscreen document.');
 
   } catch (err: any) {
     console.error('[ServiceWorker] Failed to start audio capture session:', err);
-    isRecording = false;
-    // Optionally notify content script about the failure
+    sessionManager.updateState({ status: 'idle' });
+    await handleStopRecording();
   }
 }
 
 async function handleStopRecording() {
   console.log('[ServiceWorker] Stopping audio capture session.');
-  isRecording = false;
+  sessionManager.updateState({ status: 'idle', interimTranscript: '' });
 
   // 1. Disconnect WebSocket
+  socketService.disconnect();
   audioWSManager.disconnect();
 
   // 2. Close Offscreen Document
@@ -245,10 +341,56 @@ async function handleStopRecording() {
 }
 
 function handleAudioChunk(chunk: string) {
-  if (isRecording) {
-    audioWSManager.sendChunk(chunk);
-  } else {
-    console.warn('[ServiceWorker] Received chunk but recording is not active.');
+  const currentState = sessionManager.getState();
+  if (currentState.status === 'recording') {
+    socketService.send({
+      type: 'TRANSCRIPTION_FRAGMENT',
+      sessionId: currentState.sessionId!,
+      payload: {
+        text: chunk,
+        isFinal: false,
+        lang: currentState.lang,
+        mode: currentState.mode,
+        modeSegmentId: currentState.modeSegmentId,
+        studentId: currentState.studentId
+      },
+      timestamp: Date.now()
+    });
+  }
+}
+
+function handleSocketMessage(message: WsMessage) {
+  switch (message.type) {
+    case 'SESSION_COMMAND': {
+      const payload = message.payload as any;
+      const command = payload.command;
+      const currentState = sessionManager.getState();
+
+      if (command === 'START') {
+        sessionManager.updateState({
+          mode: payload.mode,
+          modeSegmentId: payload.modeSegmentId,
+          status: 'recording'
+        });
+        // Start transcription capture in offscreen (already started by handleStartRecording)
+      } else if (command === 'PAUSE') {
+        sessionManager.updateState({ status: 'paused' });
+      } else if (command === 'STOP') {
+        handleStopRecording();
+      }
+      break;
+    }
+    case 'TRANSCRIPTION_FRAGMENT': {
+      const payload = message.payload as any;
+      sessionManager.updateState({ interimTranscript: payload.text });
+      break;
+    }
+    case 'FEEDBACK': {
+      const payload = message.payload as any;
+      sessionManager.addFeedback(payload.text, payload.level);
+      break;
+    }
+    // ... other cases as needed
   }
 }
 
@@ -256,7 +398,7 @@ function handleAudioChunk(chunk: string) {
 // Google OAuth
 // ---------------------------------------------------------------------------
 
-async function authenticateWithGoogle(): Promise<{ authCode: string }> {
+async function authenticateWithGoogle(): Promise<{ authCode: string, email: string, name: string }> {
   return new Promise((resolve, reject) => {
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     const extensionId = chrome.runtime.id;
@@ -293,7 +435,7 @@ async function authenticateWithGoogle(): Promise<{ authCode: string }> {
           return;
         }
 
-        resolve({ authCode });
+        resolve({ authCode, email: '', name: '' }); // Note: In a real app, we'd fetch user info or derive it from the backend response
       }
     );
   });
