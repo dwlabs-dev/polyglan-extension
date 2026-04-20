@@ -125,6 +125,7 @@ async function waitForOffscreenReady(timeoutMs = 5000): Promise<void> {
 
 let activeMeetingId: string | null = null;
 let pendingSpeakerId: string | null = null;
+let activeStreamId: string | null = null;
 
 // ---------------------------------------------------------------------------
 // Message Router
@@ -252,6 +253,9 @@ async function handleStartRecording(meetingId: string, speakerId: string) {
 
   console.log(`[ServiceWorker] 🎙️ Starting recording session for ${meetingId}...`);
   
+  // Generate a unique streamId for this capture session
+  activeStreamId = `stream-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
   // Update state with correct IDs
   sessionManager.updateState({
     status: 'recording',
@@ -283,7 +287,7 @@ async function handleStartRecording(meetingId: string, speakerId: string) {
 
     // 5. Tell the offscreen document to start recording
     chrome.runtime.sendMessage({ type: 'START_RECORDING' });
-    console.log('[ServiceWorker] Sent START_RECORDING to offscreen document.');
+    console.log(`[ServiceWorker] Sent START_RECORDING to offscreen document. StreamID: ${activeStreamId}`);
 
   } catch (err: any) {
     console.error('[ServiceWorker] Failed to start audio capture session:', err);
@@ -312,19 +316,16 @@ async function handleStopRecording() {
 
 function handleAudioChunk(chunk: string) {
   const currentState = sessionManager.getState();
-  if (currentState.status === 'recording' && currentState.sessionId && currentState.studentId) {
+  
+  if (currentState.status === 'recording' && currentState.sessionId && currentState.studentId && activeStreamId) {
+    // FLAT structure matching backend's AudioChunkMessage interface in api/src/lib/audio-ws.ts
     socketService.send({
-      type: 'AUDIO_CHUNK',
-      sessionId: currentState.sessionId,
-      payload: {
-        chunk: chunk,
-        lang: currentState.lang,
-        mode: currentState.mode,
-        modeSegmentId: currentState.modeSegmentId,
-        studentId: currentState.studentId
-      },
-      timestamp: Date.now()
-    });
+      meetingId: currentState.sessionId,
+      speakerId: currentState.studentId,
+      streamId: activeStreamId,
+      timestamp: Date.now(),
+      chunk: chunk
+    } as any); 
   }
 }
 
