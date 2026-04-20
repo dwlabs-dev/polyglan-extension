@@ -19,18 +19,24 @@ class SocketService {
     this.currentUserName = userName || null;
     this.intentionalClose = false;
 
-    const wsBaseUrl = (import.meta.env.VITE_WS_URL as string) || 'ws://localhost:3002';
-    // Ensure the URL ends with /ws and append sessionId as query param
-    let wsUrl = wsBaseUrl.endsWith('/ws') ? wsBaseUrl : `${wsBaseUrl.replace(/\/$/, '')}/ws`;
+    let wsUrl = (import.meta.env.VITE_WS_URL as string);
+    const staleUrl = 'true-stack-periodically-modern.trycloudflare.com';
 
-    // Enforce WSS if protocol is https
-    if (protocol === 'https' && wsUrl.startsWith('ws://')) {
+    if (!wsUrl || wsUrl === 'undefined' || wsUrl.includes(staleUrl)) {
+        console.log(`[SocketService] 🛠️ Overriding stale/missing URL with localhost`);
+        wsUrl = 'ws://localhost:3002/ws';
+    } else {
+        wsUrl = wsUrl.endsWith('/ws') ? wsUrl : `${wsUrl.replace(/\/$/, '')}/ws`;
+    }
+
+    // Enforce WSS if protocol is https and it's not localhost
+    if (protocol === 'https' && wsUrl.startsWith('ws://') && !wsUrl.includes('localhost')) {
       wsUrl = wsUrl.replace('ws://', 'wss://');
     }
 
     const url = `${wsUrl}?sessionId=${sessionId}`;
 
-    console.log(`[SocketService] Connecting to ${url}`);
+    console.log(`[SocketService] 🔌 Connecting to WebSocket: ${url}`);
 
     try {
       if (this.ws) {

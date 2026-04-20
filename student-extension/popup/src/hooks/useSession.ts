@@ -36,30 +36,47 @@ export function useSession() {
     return () => chrome.runtime.onMessage.removeListener(listener);
   }, []);
 
+  const unlockAudio = useCallback(async () => {
+    try {
+      // 1. Trigger mic permission (gesture-based)
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop());
+
+      // 2. Resume AudioContext (gesture-based)
+      const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (AudioContext) {
+        const ctx = new AudioContext();
+        await ctx.resume();
+      }
+      return true;
+    } catch (e) {
+      console.warn('Failed to unlock audio from gesture:', e);
+      return false;
+    }
+  }, []);
+
   const login = useCallback(async () => {
+    await unlockAudio(); // Trigger gesture-based unlock
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage({ action: 'authenticateWithGoogle' }, (response) => {
         if (response?.success) {
-          // Note: Real authentication flow happens in Service Worker + Backend
-          // We just wait for the state update from the Service Worker
           resolve(response.data);
         } else {
           reject(response?.error || 'Authentication failed');
         }
       });
     });
-  }, []);
+  }, [unlockAudio]);
 
   const logout = useCallback(async () => {
-    chrome.runtime.sendMessage({ action: 'STOP_RECORDING' }); // Ensure we stop anything
-    // In a real app, we'd call a specific logout action
-    // For now, we'll just let the service worker handle it
+    chrome.runtime.sendMessage({ type: 'STOP_RECORDING' });
   }, []);
 
   return {
     state,
     login,
     logout,
+    unlockAudio,
     isLoading: !state,
   };
 }

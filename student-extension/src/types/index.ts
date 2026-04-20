@@ -12,6 +12,7 @@ export type WsMessage = {
 
 export type WsMessageType =
   | 'TRANSCRIPTION_FRAGMENT'
+  | 'AUDIO_CHUNK'
   | 'SESSION_COMMAND'
   | 'MODE_CHANGED'
   | 'FEEDBACK'

@@ -6,9 +6,11 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div style={styles.container}>
+      <div className="flex-center flex-column" style={{ minHeight: '450px' }}>
         <div className="lds-ring"><div></div><div></div><div></div><div></div></div>
-        <p style={{ marginTop: '20px' }}>Carregando...</p>
+        <p style={{ marginTop: '20px', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.2em' }}>
+          Carregando...
+        </p>
       </div>
     );
   }
@@ -19,7 +21,7 @@ const App: React.FC = () => {
     switch (state.status) {
       case 'idle':
         return (
-          <div style={styles.content}>
+          <div className="flex-center flex-column animate-fade-in-up" style={styles.content}>
             <div style={styles.logoContainer}>
               <div style={styles.logoIcon}>P</div>
               <h1 style={styles.title}>POLYGLAN</h1>
@@ -33,7 +35,7 @@ const App: React.FC = () => {
 
       case 'waiting':
         return (
-          <div style={styles.content}>
+          <div className="flex-center flex-column animate-fade-in-up" style={styles.content}>
             <div style={{ fontSize: '48px', marginBottom: '24px' }}>⏳</div>
             <h2 style={styles.title}>Tudo pronto</h2>
             <p style={styles.subtitle}>O professor está preparando o ambiente. Aguarde um instante.</p>
@@ -48,7 +50,7 @@ const App: React.FC = () => {
 
       case 'recording':
         return (
-          <div style={styles.content}>
+          <div className="flex-column animate-fade-in-up" style={{ ...styles.content, alignItems: 'stretch' }}>
              {state.mode === 'HISTORIA' && (
                <div style={styles.historyBanner}>
                  <div className="recording-dot"></div>
@@ -56,10 +58,10 @@ const App: React.FC = () => {
                </div>
              )}
              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 style={{ margin: 0, fontSize: '20px' }}>
+                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800' }}>
                   {state.mode === 'HISTORIA' ? 'SUA NARRATIVA' : 'Sessão Ativa'}
                 </h2>
-                <span style={styles.liveBadge}>LIVE</span>
+                <span className="live-badge">LIVE</span>
              </div>
 
              <div style={styles.transcriptBox}>
@@ -73,7 +75,7 @@ const App: React.FC = () => {
              <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div className="recording-dot"></div>
-                  <span style={{ fontSize: '12px', fontWeight: 'bold' }}>MICROFONE ATIVO</span>
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--accent-red)' }}>MICROFONE ATIVO</span>
                 </div>
              </div>
           </div>
@@ -81,7 +83,7 @@ const App: React.FC = () => {
 
       case 'paused':
         return (
-          <div style={styles.content}>
+          <div className="flex-center flex-column animate-fade-in-up" style={styles.content}>
             <div style={{ fontSize: '48px', marginBottom: '24px' }}>⏸️</div>
             <h2 style={styles.title}>Sessão Pausada</h2>
             <p style={styles.subtitle}>O professor pausou a atividade momentaneamente.</p>
@@ -90,7 +92,7 @@ const App: React.FC = () => {
 
       case 'ended':
         return (
-          <div style={styles.content}>
+          <div className="flex-center flex-column animate-fade-in-up" style={styles.content}>
             <div style={{ fontSize: '48px', marginBottom: '24px' }}>🎓</div>
             <h2 style={styles.title}>Sessão Finalizada</h2>
             <p style={styles.subtitle}>Excelente participação! Seus dados foram salvos.</p>
@@ -107,7 +109,6 @@ const App: React.FC = () => {
 
   return (
     <div style={styles.container}>
-      <style>{styles.css}</style>
       {renderContent()}
     </div>
   );
@@ -121,7 +122,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     justifyContent: 'center',
     minHeight: '450px',
     padding: '24px',
-    color: '#FDFBF7',
+    color: 'var(--text-cream)',
   },
   content: {
     display: 'flex',
@@ -138,8 +139,8 @@ const styles: { [key: string]: React.CSSProperties } = {
   logoIcon: {
     width: '40px',
     height: '40px',
-    backgroundColor: '#F4A900',
-    color: '#2C2420',
+    backgroundColor: 'var(--amber)',
+    color: 'var(--dark-brown)',
     borderRadius: '8px',
     display: 'flex',
     alignItems: 'center',
@@ -151,20 +152,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: '24px',
     fontWeight: '800',
     margin: '0 0 12px 0',
-    color: '#F4A900',
+    color: 'var(--amber)',
   },
   subtitle: {
     fontSize: '14px',
     textAlign: 'center',
-    color: '#A09088',
+    color: 'var(--text-muted)',
     marginBottom: '32px',
     lineHeight: '1.5',
   },
   primaryButton: {
     width: '100%',
     padding: '14px',
-    backgroundColor: '#F4A900',
-    color: '#2C2420',
+    backgroundColor: 'var(--amber)',
+    color: 'var(--dark-brown)',
     border: 'none',
     borderRadius: '9999px',
     fontWeight: '700',
@@ -175,8 +176,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     width: '100%',
     padding: '12px',
     backgroundColor: 'transparent',
-    color: '#A09088',
-    border: '1px solid #A09088',
+    color: 'var(--text-muted)',
+    border: '1px solid var(--text-muted)',
     borderRadius: '9999px',
     fontWeight: '600',
     marginTop: '10px',
@@ -185,15 +186,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: 'rgba(244, 169, 0, 0.1)',
     padding: '12px 20px',
     borderRadius: '12px',
-    color: '#F4A900',
+    color: 'var(--amber)',
     fontSize: '13px',
     marginBottom: '24px',
     border: '1px solid rgba(244, 169, 0, 0.3)',
   },
   historyBanner: {
     width: '100%',
-    backgroundColor: '#F4A900',
-    color: '#2C2420',
+    backgroundColor: 'var(--amber)',
+    color: 'var(--dark-brown)',
     padding: '8px 16px',
     borderRadius: '8px',
     fontSize: '12px',
@@ -221,56 +222,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     margin: 0,
   },
   placeholderText: {
-    color: '#A09088',
+    color: 'var(--text-muted)',
     fontSize: '14px',
   },
-  liveBadge: {
-    backgroundColor: '#C1666B',
-    color: 'white',
-    padding: '2px 8px',
-    borderRadius: '4px',
-    fontSize: '10px',
-    fontWeight: '900',
-  },
-  css: `
-    .recording-dot {
-      width: 8px;
-      height: 8px;
-      background-color: #C1666B;
-      border-radius: 50%;
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-      0% { transform: scale(1); opacity: 1; }
-      70% { transform: scale(1.5); opacity: 0; }
-      100% { transform: scale(1.5); opacity: 0; }
-    }
-    .lds-ring {
-      display: inline-block;
-      position: relative;
-      width: 64px;
-      height: 64px;
-    }
-    .lds-ring div {
-      box-sizing: border-box;
-      display: block;
-      position: absolute;
-      width: 51px;
-      height: 51px;
-      margin: 6px;
-      border: 6px solid #F4A900;
-      border-radius: 50%;
-      animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-      border-color: #F4A900 transparent transparent transparent;
-    }
-    .lds-ring div:nth-child(1) { animation-delay: -0.45s; }
-    .lds-ring div:nth-child(2) { animation-delay: -0.3s; }
-    .lds-ring div:nth-child(3) { animation-delay: -0.15s; }
-    @keyframes lds-ring {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  `
 } as any;
 
 export default App;
