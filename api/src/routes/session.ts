@@ -12,6 +12,27 @@ import { broadcastToSession } from '@lib/websocket.js';
 const router = Router();
 
 /**
+ * GET /api/session/verify/:code
+ * Verifies if a Google Meet code corresponds to an active Polyglan session
+ */
+router.get('/api/session/verify/:code', async (req: Request, res: Response) => {
+  const { code } = req.params;
+
+  try {
+    const session = SessionService.getSessionByCode(code);
+
+    res.json({
+      status: 'success',
+      active: !!session,
+      sessionId: session?.sessionId
+    });
+  } catch (error) {
+    console.error('[SessionRoute] Error verifying session:', error);
+    res.status(500).json({ status: 'error', message: 'Internal server error.' });
+  }
+});
+
+/**
  * POST /api/session/create
  * Body: { sessionCode: string }
  * Creates a new session for a professor
@@ -19,7 +40,7 @@ const router = Router();
  */
 router.post('/api/session/create', ensureAuthenticated, async (req: Request, res: Response) => {
   const { sessionCode } = req.body;
-  
+
   if (!sessionCode) {
     res.status(400).json({
       status: 'error',

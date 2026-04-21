@@ -1,13 +1,22 @@
 import React from 'react';
 import { useSession } from './hooks/useSession';
+import {
+  Mic,
+  MicOff,
+  Loader2,
+  AlertCircle,
+  Clock,
+  Pause,
+  GraduationCap
+} from 'lucide-react';
 
 const App: React.FC = () => {
-  const { state, login, logout, isLoading } = useSession();
+  const { state, micGranted, login, logout, isLoading, unlockAudio } = useSession();
 
   if (isLoading) {
     return (
       <div className="flex-center flex-column" style={{ minHeight: '450px' }}>
-        <div className="lds-ring"><div></div><div></div><div></div><div></div></div>
+        <Loader2 className="animate-spin" size={48} color="var(--amber)" />
         <p style={{ marginTop: '20px', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.2em' }}>
           Carregando...
         </p>
@@ -16,6 +25,45 @@ const App: React.FC = () => {
   }
 
   if (!state) return null;
+
+  // Lógica para definir o estilo do container baseado no microfone e gravação
+  const isRecording = state.status === 'recording' && micGranted;
+  const containerStyle = {
+    ...styles.container,
+    border: isRecording ? '2px solid var(--accent-red)' : '2px solid transparent',
+    boxShadow: isRecording ? '0 0 15px rgba(239, 68, 68, 0.2)' : 'none',
+    transition: 'all 0.3s ease'
+  };
+
+  // Renderiza as ações do topo (Microfone e REC)
+  const renderHeaderActions = () => (
+    <div style={styles.headerActions}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log('Botão de microfone clicado');
+          unlockAudio();
+        }}
+        style={{
+          ...styles.iconButton,
+          color: micGranted ? 'var(--amber)' : 'var(--accent-red)',
+          backgroundColor: micGranted ? 'rgba(244, 169, 0, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+          cursor: 'pointer',
+          pointerEvents: 'auto'
+        }}
+        title={micGranted ? "Microfone Ativo" : "Microfone Mutado - Clique para Ativar"}
+      >
+        {micGranted ? <Mic size={20} /> : <MicOff size={20} />}
+      </button>
+
+      {isRecording && (
+        <div className="animate-pulse" style={styles.recIndicator}>
+          <div className="recording-dot"></div>
+          <span style={{ fontSize: '10px', fontWeight: 'bold' }}>REC</span>
+        </div>
+      )}
+    </div>
+  );
 
   const renderContent = () => {
     switch (state.status) {
@@ -36,9 +84,17 @@ const App: React.FC = () => {
       case 'waiting':
         return (
           <div className="flex-center flex-column animate-fade-in-up" style={styles.content}>
-            <div style={{ fontSize: '48px', marginBottom: '24px' }}>⏳</div>
+            <Clock size={48} color="var(--amber)" style={{ marginBottom: '24px' }} />
             <h2 style={styles.title}>Tudo pronto</h2>
             <p style={styles.subtitle}>O professor está preparando o ambiente. Aguarde um instante.</p>
+
+            {!micGranted && (
+              <div style={styles.subtleAlert}>
+                <AlertCircle size={16} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+                <span style={{ fontSize: '12px' }}>Clique no ícone de microfone acima para habilitar sua voz.</span>
+              </div>
+            )}
+
             <div style={styles.userBadge}>
               LOGADO COMO <strong>{state.userName || state.googleEmail?.split('@')[0]}</strong>
             </div>
@@ -51,40 +107,40 @@ const App: React.FC = () => {
       case 'recording':
         return (
           <div className="flex-column animate-fade-in-up" style={{ ...styles.content, alignItems: 'stretch' }}>
-             {state.mode === 'HISTORIA' && (
-               <div style={styles.historyBanner}>
-                 <div className="recording-dot"></div>
-                 <span>HISTÓRIA ATIVA</span>
-               </div>
-             )}
-             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800' }}>
-                  {state.mode === 'HISTORIA' ? 'SUA NARRATIVA' : 'Sessão Ativa'}
-                </h2>
-                <span className="live-badge">LIVE</span>
-             </div>
+            {state.mode === 'HISTORIA' && (
+              <div style={styles.historyBanner}>
+                <span>HISTÓRIA ATIVA</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800' }}>
+                {state.mode === 'HISTORIA' ? 'SUA NARRATIVA' : 'Sessão Ativa'}
+              </h2>
+              <span className="live-badge">LIVE</span>
+            </div>
 
-             <div style={styles.transcriptBox}>
-                {state.interimTranscript ? (
-                  <p style={styles.transcriptText}>{state.interimTranscript}</p>
-                ) : (
-                  <p style={styles.placeholderText}>Ouvindo áudio...</p>
-                )}
-             </div>
-
-             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div className="recording-dot"></div>
-                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--accent-red)' }}>MICROFONE ATIVO</span>
+            <div style={styles.transcriptBox}>
+              {!micGranted ? (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: 'var(--accent-red)', fontWeight: 'bold', fontSize: '18px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <MicOff size={24} />
+                    MUDO
+                  </div>
+                  <p style={styles.placeholderText}>O professor não consegue te ouvir.<br />Ative o microfone no canto superior.</p>
                 </div>
-             </div>
+              ) : state.interimTranscript ? (
+                <p style={styles.transcriptText}>{state.interimTranscript}</p>
+              ) : (
+                <p style={styles.placeholderText}>Ouvindo áudio...</p>
+              )}
+            </div>
           </div>
         );
 
       case 'paused':
         return (
           <div className="flex-center flex-column animate-fade-in-up" style={styles.content}>
-            <div style={{ fontSize: '48px', marginBottom: '24px' }}>⏸️</div>
+            <Pause size={48} color="var(--amber)" style={{ marginBottom: '24px' }} />
             <h2 style={styles.title}>Sessão Pausada</h2>
             <p style={styles.subtitle}>O professor pausou a atividade momentaneamente.</p>
           </div>
@@ -93,7 +149,7 @@ const App: React.FC = () => {
       case 'ended':
         return (
           <div className="flex-center flex-column animate-fade-in-up" style={styles.content}>
-            <div style={{ fontSize: '48px', marginBottom: '24px' }}>🎓</div>
+            <GraduationCap size={48} color="var(--amber)" style={{ marginBottom: '24px' }} />
             <h2 style={styles.title}>Sessão Finalizada</h2>
             <p style={styles.subtitle}>Excelente participação! Seus dados foram salvos.</p>
             <button style={styles.primaryButton} onClick={() => window.location.reload()}>
@@ -108,7 +164,8 @@ const App: React.FC = () => {
   };
 
   return (
-    <div style={styles.container}>
+    <div style={containerStyle}>
+      {state.status !== 'idle' && renderHeaderActions()}
       {renderContent()}
     </div>
   );
@@ -123,12 +180,63 @@ const styles: { [key: string]: React.CSSProperties } = {
     minHeight: '450px',
     padding: '24px',
     color: 'var(--text-cream)',
+    position: 'relative',
+    borderRadius: '24px',
+    backgroundColor: 'var(--dark-brown)',
+    overflow: 'hidden',
+  },
+  headerActions: {
+    position: 'absolute',
+    top: '20px',
+    left: '20px',
+    right: '20px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    zIndex: 9999, // Força ficar acima de qualquer banner ou conteúdo
+    pointerEvents: 'none', // Permite que cliques passem pelo container, mas não pelos botões
+  },
+  iconButton: {
+    width: '40px',
+    height: '40px',
+    borderRadius: '12px',
+    border: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '20px',
+    transition: 'all 0.2s ease',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+  },
+  recIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    padding: '6px 12px',
+    borderRadius: '20px',
+    color: 'var(--accent-red)',
+    pointerEvents: 'auto',
+  },
+  subtleAlert: {
+    padding: '12px',
+    borderRadius: '12px',
+    backgroundColor: 'rgba(239, 68, 68, 0.05)',
+    color: 'var(--text-muted)',
+    marginBottom: '20px',
+    textAlign: 'center',
+    width: '100%',
+    border: '1px dashed rgba(239, 68, 68, 0.3)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     width: '100%',
+    zIndex: 1,
   },
   logoContainer: {
     display: 'flex',
@@ -170,7 +278,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '9999px',
     fontWeight: '700',
     fontSize: '16px',
-    boxShadow: '0 4px 14px rgba(244, 169, 0, 0.3)',
+    cursor: 'pointer',
+    transition: 'transform 0.2s ease, opacity 0.2s ease',
   },
   secondaryButton: {
     width: '100%',
@@ -181,6 +290,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '9999px',
     fontWeight: '600',
     marginTop: '10px',
+    cursor: 'pointer',
+    transition: 'transform 0.2s ease, opacity 0.2s ease',
   },
   userBadge: {
     backgroundColor: 'rgba(244, 169, 0, 0.1)',
@@ -199,9 +310,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '8px',
     fontSize: '12px',
     fontWeight: '900',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
     marginBottom: '16px',
   },
   transcriptBox: {
@@ -224,6 +332,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   placeholderText: {
     color: 'var(--text-muted)',
     fontSize: '14px',
+    textAlign: 'center',
   },
 } as any;
 
