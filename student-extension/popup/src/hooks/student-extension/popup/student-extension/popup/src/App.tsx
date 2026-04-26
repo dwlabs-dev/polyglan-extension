@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { useSessionStatus, useMicPermission, useSessionActions, useSessionData, useSessionLoading } from './hooks/useSession';
+import React from 'react';
+import { useSession } from './hooks/useSession';
 import LoadingScreen from './components/LoadingScreen';
 import Header from './components/Header';
 import IdleView from './components/views/IdleView';
@@ -10,60 +10,68 @@ import EndedView from './components/views/EndedView';
 import { sharedStyles } from './components/AppStyles';
 
 const App: React.FC = () => {
-  const status = useSessionStatus();
-  const micGranted = useMicPermission();
-  const { login, logout, unlockAudio } = useSessionActions();
-  const data = useSessionData();
-  const isLoading = useSessionLoading();
+  const {
+    state,
+    micGranted,
+    login,
+    logout,
+    isLoading,
+    unlockAudio
+  } = useSession();
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-  if (!data) return null;
+  if (!state) return null;
 
-  const isRecording = status === 'recording' && micGranted;
+  const isRecording = state.status === 'recording' && micGranted;
 
-  const containerStyle = useMemo(() => ({
+  const containerStyle = {
     ...sharedStyles.container,
     border: isRecording ? '2px solid var(--accent-red)' : '2px solid transparent',
     boxShadow: isRecording ? '0 0 15px rgba(239, 68, 68, 0.2)' : 'none',
     transition: 'all 0.3s ease'
-  }), [isRecording]);
+  };
 
   return (
     <div style={containerStyle}>
-      {status !== 'idle' && (
-        <Header />
+      {state.status !== 'idle' && (
+        <Header
+          micGranted={micGranted}
+          isRecording={isRecording}
+          onUnlockAudio={unlockAudio}
+        />
       )}
 
-      {status === 'idle' && (
+      {state.status === 'idle' && (
         <IdleView onLogin={login} />
       )}
 
-      {status === 'waiting' && (
+      {state.status === 'waiting' && (
         <WaitingView
-          userName={data.userName}
-          googleEmail={data.googleEmail}
+          userName={state.userName}
+          googleEmail={state.googleEmail}
           micGranted={micGranted}
           onLogout={logout}
         />
       )}
 
-      {status === 'recording' && (
+      {state.status === 'recording' && (
         <RecordingView
-          mode={data.mode}
-          isHistory={data.mode === 'HISTORIA'}
+          mode={state.mode}
+          isHistory={state.mode === 'HISTORIA'}
           micGranted={micGranted}
+          interimTranscript={state.interimTranscript}
         />
       )}
 
-      {status === 'paused' && (
+      {state.status === 'paused' && (
         <PausedView />
       )}
 
-      {status === 'ended' && (
-        <EndedView />
+      {state.status === 'ended' && (
+        <EndedView onRestart={() => window.location.reload()} />
       )}
     </div>
   );

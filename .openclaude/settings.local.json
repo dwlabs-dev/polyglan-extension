@@ -5,7 +5,12 @@
       "Bash(find front/src -type f -exec grep -i \"AudioContext\" {} +)",
       "Bash(npm run:*)",
       "Bash(npx tsc:*)",
-      "Bash(tee build_output.log)"
+      "Bash(tee build_output.log)",
+      "Bash(./node_modules/.bin/vite build:*)",
+      "Bash(./node_modules/.bin/tsc)",
+      "Bash(npx vite:*)",
+      "Bash(tee build_log.txt)",
+      "Bash(bash -c \"npm run build\")"
     ]
   }
 }
